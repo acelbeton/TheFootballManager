@@ -115,7 +115,7 @@
 13. #### StandardLineup tábla
     - `id` 
     - `team_id`
-    - `formation` &rarr; A formáció típusa pl.: 4-4-2, 3-4-3 stb.
+    - `formation_id` &rarr; A formáció id-ja
 
 14. #### StandardLineupPlayer tábla
     - `id`
@@ -127,7 +127,7 @@
     - `id`
     - `match_id` &rarr; Meccs id-ja
     - `team_id` &rarr; Csapat id-ja
-    - `formation` &rarr; Milyen formációban játszottak pl. 4-4-2, 3-4-3 stb.
+    - `formation_id` &rarr; Formáció id-ja. Milyen formációban játszottak pl. 4-4-2, 3-4-3 stb.
 
 16. #### MatchLineupPlayer tábla
     - `id`
@@ -142,7 +142,23 @@
     - `amount` &rarr; Tranzakció értéke
     - `transaction_date` &rarr; Tranzakció dátuma
 
-18. #### TODO Formation tábla
-    - Hogyan lenne érdemes formationt tárolni?
+18. #### Formation tábla
+    - `id`
+    - `name` &rarr; A formáció neve pl.: '4-4-2', '3-4-3'
+    - `description` &rarr; Leírás a formációhoz
+
+19. #### FormationPosition tábla
+    - `id`
+    - `formation_id` &rarr; A formáció id-ja
+    - `position_id` &rarr; A pozíció id-ja
+    - `position_order` &rarr; A pozicíó sorrendi száma a formációban
+
+20. #### Substitution tálba
+    - `id` 
+    - `match_id` &rarr; Meccs id-ja
+    - `team_id` &rarr; Csapat id-ja
+    - `player_in_id` &rarr; A becserélt játékos id-ja
+    - `player_out_id` &rarr; A lejövő játékos id-ja
+    - `substitution_time` &rarr; A csere ideje
 
    
