@@ -17,7 +17,7 @@
    - `name` &rarr; Csapat neve
    - `user_id` &rarr; Ezzel csatoljuk a felhasználóhoz a csapatot
    - `current_tactic` &rarr; Jelenlegi taktika
-   - `team_quality` &rarr; A csapat minőségi szintje 1-100 -> Csapat Játékosainak rating-jéből átlag 
+   - `team_rating` &rarr; A csapat minőségi szintje 1-100 -> Csapat Játékosainak rating-jéből átlag 
    - `budget` &rarr; A csapat költségvetése
 
 3. #### Player tábla
