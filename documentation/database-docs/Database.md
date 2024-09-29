@@ -67,7 +67,7 @@
    - `user_id` &rarr; A licitet vezető játékos
    - `timestamps` (created_at, modified_at)
 
-8. #### Training_Session tábla
+8. #### TrainingSession tábla
    - `id`
    - `team_id` &rarr; Az edző csapat id-ja
    - `player_id` &rarr; A játékos id-ja (egyéni tréning)
@@ -153,7 +153,7 @@
     - `position_id` &rarr; A pozíció id-ja
     - `position_order` &rarr; A pozicíó sorrendi száma a formációban
 
-20. #### Substitution tálba
+20. #### Substitution tábla
     - `id` 
     - `match_id` &rarr; Meccs id-ja
     - `team_id` &rarr; Csapat id-ja
