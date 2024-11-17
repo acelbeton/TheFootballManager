@@ -2,7 +2,7 @@
 
 ## Okok
 + Az előzőnek kitalált adatbázis túl komplex és robosztus egy szakdolgozathoz
-+ Egyszerűbb adatbázisra van szükségem, amellyel a core gameplay-t betudom mutatni
++ Egyszerűbb adatbázisra van szükségem, amellyel a core gameplay-t be tudom mutatni
 
 ## Táblák
 
