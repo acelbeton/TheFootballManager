@@ -16,9 +16,9 @@ class Team extends Model
         'name',
         'user_id',
         'current_tactic',
-        'budget',
     ];
 
+    protected $casts = ['team_budget' => 'float'];
     protected $appends = ['team_quality'];
 
     public function user(): BelongsTo
@@ -34,7 +34,7 @@ class Team extends Model
     public function getTeamQualityAttribute(): int
     {
         return $this->player()
-            ->selectRaw('AVG(rating) as team_quality')
-            ->value('team_quality');
+            ->selectRaw('AVG(rating) as team_rating')
+            ->value('team_rating');
     }
 }

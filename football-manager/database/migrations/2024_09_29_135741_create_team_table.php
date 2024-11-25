@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('name')->unique();
             $table->enum('current_tactic', ['ATTACK_MODE', 'DEFEND_MODE', 'DEFAULT_MODE'])->default('DEFAULT_MODE');
             $table->unsignedTinyInteger('team_rating')->default(0);
-            $table->integer('team_budget')->default(0);
+            $table->integer('team_budget')->default(10000);
             $table->timestamps();
 
             $table->index('user_id');

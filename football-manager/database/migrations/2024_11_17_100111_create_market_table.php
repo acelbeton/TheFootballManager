@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('player_id')->constrained('player');
             $table->foreignId('user_id')->constrained('user');
             $table->integer('current_bid_amount')->default(0);
+            $table->dateTime('bidding_end_date')->nullable();
             $table->timestamps();
 
             $table->index(['player_id', 'user_id']);

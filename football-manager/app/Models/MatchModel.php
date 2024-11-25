@@ -10,7 +10,7 @@ class MatchModel extends Model
 {
     use HasFactory;
 
-    protected $table = 'match';
+    protected $table = 'game_match';
 
     protected $fillable = [
         'home_team_id',
