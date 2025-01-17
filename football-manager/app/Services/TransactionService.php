@@ -8,9 +8,6 @@ use App\Models\Team;
 
 class TransactionService
 {
-    /**
-     * Place a bid for a player in the market.
-     */
     public function placeBid(int $playerId, int $userId, int $bidAmount)
     {
         $marketEntry = Market::firstOrCreate(['player_id' => $playerId]);
@@ -27,9 +24,6 @@ class TransactionService
         return $marketEntry;
     }
 
-    /**
-     * Finalize a player's transfer.
-     */
     public function finalizeTransfer(int $marketId, int $teamId)
     {
         $marketEntry = Market::findOrFail($marketId);

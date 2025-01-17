@@ -8,18 +8,12 @@ use Illuminate\Http\Request;
 
 class LeagueApiController extends Controller
 {
-    /**
-     * Display a listing of leagues.
-     */
     public function index(): JsonResponse
     {
         $leagues = League::all();
         return response()->json($leagues);
     }
 
-    /**
-     * Store a newly created league in storage.
-     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -36,17 +30,11 @@ class LeagueApiController extends Controller
         return response()->json($league, 201);
     }
 
-    /**
-     * Display the specified league.
-     */
     public function show(League $league): JsonResponse
     {
         return response()->json($league);
     }
 
-    /**
-     * Update the specified league in storage.
-     */
     public function update(Request $request, League $league): JsonResponse
     {
         $validated = $request->validate([
@@ -63,9 +51,6 @@ class LeagueApiController extends Controller
         return response()->json($league);
     }
 
-    /**
-     * Remove the specified league from storage.
-     */
     public function destroy(League $league): JsonResponse
     {
         $league->delete();

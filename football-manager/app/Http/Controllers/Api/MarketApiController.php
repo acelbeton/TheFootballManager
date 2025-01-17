@@ -8,18 +8,12 @@ use Illuminate\Http\Request;
 
 class MarketApiController extends Controller
 {
-    /**
-     * Display a listing of market entries.
-     */
     public function index(): JsonResponse
     {
         $markets = Market::with(['player', 'user'])->get();
         return response()->json($markets);
     }
 
-    /**
-     * Store a newly created market entry in storage.
-     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -33,17 +27,11 @@ class MarketApiController extends Controller
         return response()->json($market, 201);
     }
 
-    /**
-     * Display the specified market entry.
-     */
     public function show(Market $market): JsonResponse
     {
         return response()->json($market->load(['player', 'user']));
     }
 
-    /**
-     * Update the specified market entry in storage.
-     */
     public function update(Request $request, Market $market): JsonResponse
     {
         $validated = $request->validate([
@@ -57,9 +45,6 @@ class MarketApiController extends Controller
         return response()->json($market);
     }
 
-    /**
-     * Remove the specified market entry from storage.
-     */
     public function destroy(Market $market): JsonResponse
     {
         $market->delete();

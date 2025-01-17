@@ -9,17 +9,11 @@ use Illuminate\Http\Request;
 
 class PlayerApiController extends Controller
 {
-    /**
-     * Fetch all players.
-     */
     public function index(): JsonResponse
     {
         return response()->json(Player::with('team')->paginate(15));
     }
 
-    /**
-     * Store a new player.
-     */
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -39,17 +33,11 @@ class PlayerApiController extends Controller
         ], 201);
     }
 
-    /**
-     * Fetch a single player.
-     */
     public function show(Player $player): JsonResponse
     {
         return response()->json($player->load('team'));
     }
 
-    /**
-     * Update a player.
-     */
     public function update(Request $request, Player $player): JsonResponse
     {
         $validated = $request->validate([
@@ -69,9 +57,6 @@ class PlayerApiController extends Controller
         ]);
     }
 
-    /**
-     * Delete a player.
-     */
     public function destroy(Player $player): JsonResponse
     {
         try {
