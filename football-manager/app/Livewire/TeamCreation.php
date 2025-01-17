@@ -3,47 +3,66 @@
 namespace App\Livewire;
 
 use App\Models\League;
+use App\Models\Player;
 use App\Models\Team;
-use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
 
 class TeamCreation extends Component
 {
     public $name;
-    public $league_id;
-    public $leagues;
-
-    public function mount()
-    {
-        // Load leagues for the dropdown
-        $this->leagues = League::all();
-    }
+    public $league;
 
     public function createTeam()
     {
         $this->validate([
-            'name' => 'required|string|max:255',
-            'league_id' => 'required|exists:leagues,id',
+            'name' => 'required|string|max:255|unique:team,name',
+            'league' => 'required|exists:leagues,id',
         ]);
 
-        Team::create([
+        $team = Team::create([
+            'user_id' => auth()->id(),
             'name' => $this->name,
-            'user_id' => Auth::id(), // Associate the team with the logged-in user
-            'league_id' => $this->league_id,
-            'current_tactic' => '4-4-2', // Default tactic
-            'budget' => 1000000, // Initial budget
         ]);
 
-        // Reset form fields
-        $this->reset(['name', 'league_id']);
+        $this->assignRandomPlayers($team);
 
-        // Flash a success message
-        session()->flash('message', 'Team created successfully!');
+        return redirect()->route('dashboard')->with('success', 'Team created successfully with 18 players.');
+    }
+
+    private function assignRandomPlayers(Team $team)
+    {
+        $positions = [
+            'goalkeeper' => 2,
+            'centre-back' => 4,
+            'fullback' => 2,
+            'midfielder' => 6,
+            'winger' => 2,
+            'striker' => 2,
+        ];
+
+        foreach ($positions as $position => $count) {
+            Player::factory($count)->create([
+                'team_id' => $team->id,
+                'position' => $position,
+            ]);
+        }
+
+        $this->updateTeamRating($team);
+    }
+
+    private function updateTeamRating(Team $team)
+    {
+        $team->update([
+            'team_rating' => round(
+                $team->players()->avg('rating')
+            ),
+        ]);
     }
 
     public function render()
     {
-        return view('livewire.team-creation');
+        return view('livewire.team-creation', [
+            'leagues' => League::all(),
+        ]);
     }
 }
-

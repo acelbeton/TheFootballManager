@@ -39,13 +39,13 @@ class Teams extends Component
     public function deleteTeam($id)
     {
         Team::findOrFail($id)->delete();
-        $this->teams = Team::all(); // Refresh the list
+        $this->teams = Team::all();
         session()->flash('message', 'Team deleted successfully.');
     }
 
     public function render()
     {
         return view('livewire.teams')
-            ->layout('components.layouts.app', ['title' => 'Teams Management']);
+            ->layout('layouts.app', ['title' => 'Teams Management']);
     }
 }

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('market', function (Blueprint $table) {
             $table->id();
             $table->foreignId('player_id')->constrained('player');
-            $table->foreignId('user_id')->constrained('user');
+            $table->foreignId('user_id')->constrained('users');
             $table->integer('current_bid_amount')->default(0);
             $table->dateTime('bidding_end_date')->nullable();
             $table->timestamps();
