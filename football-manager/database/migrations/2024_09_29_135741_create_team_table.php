@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('team', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained('user');
+            $table->foreignId('user_id')->nullable()->constrained('user');
             $table->string('name')->unique();
             $table->enum('current_tactic', ['ATTACK_MODE', 'DEFEND_MODE', 'DEFAULT_MODE'])->default('DEFAULT_MODE');
             $table->unsignedTinyInteger('team_rating')->default(0);

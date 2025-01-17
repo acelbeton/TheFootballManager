@@ -23,13 +23,6 @@ return new class extends Migration
             $table->integer('tactical_sense');
             $table->timestamps();
 
-            DB::statement('ALTER TABLE statistic ADD CONSTRAINT chk_attacking CHECK (attacking BETWEEN 1 and 100)');
-            DB::statement('ALTER TABLE statistic ADD CONSTRAINT chk_defending CHECK (defending BETWEEN 1 and 100)');
-            DB::statement('ALTER TABLE statistic ADD CONSTRAINT chk_stamina CHECK (stamina BETWEEN 1 and 100)');
-            DB::statement('ALTER TABLE statistic ADD CONSTRAINT chk_technical_skills CHECK (technical_skills BETWEEN 1 and 100)');
-            DB::statement('ALTER TABLE statistic ADD CONSTRAINT chk_speed CHECK (speed BETWEEN 1 and 100)');
-            DB::statement('ALTER TABLE statistic ADD CONSTRAINT chk_tactical_sense CHECK (tactical_sense BETWEEN 1 and 100)');
-
             $table->index(['player_id']);
         });
     }

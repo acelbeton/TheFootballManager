@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,20 @@ class Player extends Model
     ];
 
     protected $appends = ['rating'];
+
+    public static function boot()
+    {
+        parent::boot();
+
+        self::saving(function (Player $player) {
+            if ($player->rating < 1 || $player->rating > 100) {
+                throw new Exception('Rating must be between 1 and 100.');
+            }
+            if ($player->condition < 1 || $player->condition > 100) {
+                throw new Exception('Condition must be between 1 and 100.');
+            }
+        });
+    }
 
     public function getRatingAttribute(): int
     {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,16 @@ class PlayerPerformance extends Model
         'rating',
         'minutes_played',
     ];
+
+    public static function boot() {
+        parent::boot();
+
+        self::saving(function($model) {
+           if ($model->rating < 1 || $model->rating > 100) {
+               throw new Exception("Rating is out of range");
+           }
+        });
+    }
 
     public function player(): BelongsTo
     {

@@ -14,7 +14,7 @@ class PlayerApiController extends Controller
      */
     public function index(): JsonResponse
     {
-        return response()->json(Player::with('team')->get());
+        return response()->json(Player::with('team')->paginate(15));
     }
 
     /**
@@ -24,7 +24,7 @@ class PlayerApiController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'team_id' => 'nullable|exists:team,id',
+            'team_id' => 'nullable|exists:teams,id',
             'position' => 'required|string|max:255',
             'market_value' => 'required|numeric|min:0',
             'condition' => 'required|numeric|min:0|max:100',
@@ -33,7 +33,10 @@ class PlayerApiController extends Controller
 
         $player = Player::create($validated);
 
-        return response()->json($player, 201);
+        return response()->json([
+            'message' => 'Player created successfully.',
+            'data' => $player,
+        ], 201);
     }
 
     /**
@@ -60,7 +63,10 @@ class PlayerApiController extends Controller
 
         $player->update($validated);
 
-        return response()->json($player);
+        return response()->json([
+            'message' => 'Player updated successfully.',
+            'data' => $player,
+        ]);
     }
 
     /**
@@ -68,8 +74,17 @@ class PlayerApiController extends Controller
      */
     public function destroy(Player $player): JsonResponse
     {
-        $player->delete();
+        try {
+            $player->delete();
 
-        return response()->json(['message' => 'Player deleted successfully'], 200);
+            return response()->json([
+                'message' => 'Player deleted successfully.',
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Failed to delete the player.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 }
