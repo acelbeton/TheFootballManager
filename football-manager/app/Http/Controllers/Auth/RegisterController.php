@@ -31,7 +31,7 @@ class RegisterController extends Controller
 
         Auth::login($user);
 
-        return redirect()->route('team.create');
+        return redirect()->route('create-team');
     }
 }
 

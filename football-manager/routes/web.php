@@ -22,7 +22,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/teams', Teams::class)->name('teams.index');
     Route::get('/players', Players::class)->name('players.index');
-    Route::get('/create-team', TeamCreation::class)->name('team.create');
+
+    Route::get('/create-team', TeamCreation::class)->name('create-team');
+
 
     Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 });

@@ -27,7 +27,7 @@ class Players extends Component
 
     public function deletePlayer($id): void
     {
-        $response = Http::post("api/players/{$id}");
+        $response = Http::post("api/players/$id");
 
         if ($response->successful()) {
             $this->fetchPlayers();

@@ -63,6 +63,6 @@ class TeamCreation extends Component
     {
         return view('livewire.team-creation', [
             'leagues' => League::all(),
-        ]);
+        ])->with('layouts.app');
     }
 }

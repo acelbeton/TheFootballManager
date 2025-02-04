@@ -5,15 +5,19 @@ namespace App\Services;
 use App\Models\Market;
 use App\Models\Player;
 use App\Models\Team;
+use Exception;
 
 class TransactionService
 {
+    /**
+     * @throws Exception
+     */
     public function placeBid(int $playerId, int $userId, int $bidAmount)
     {
         $marketEntry = Market::firstOrCreate(['player_id' => $playerId]);
 
         if ($bidAmount <= $marketEntry->current_bid_amount) {
-            throw new \Exception('Bid amount must be higher than the current bid.');
+            throw new Exception('Bid amount must be higher than the current bid.');
         }
 
         $marketEntry->update([
