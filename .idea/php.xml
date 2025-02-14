@@ -140,6 +140,8 @@
       <path value="$PROJECT_DIR$/football-manager/vendor/clue/redis-react" />
       <path value="$PROJECT_DIR$/football-manager/vendor/clue/redis-protocol" />
       <path value="$PROJECT_DIR$/football-manager/vendor/ratchet/rfc6455" />
+      <path value="$PROJECT_DIR$/football-manager/vendor/barryvdh/laravel-debugbar" />
+      <path value="$PROJECT_DIR$/football-manager/vendor/maximebf/debugbar" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />

@@ -1,34 +1,29 @@
 <?php
 
-use App\Http\Controllers\Auth\LoginController;
-use App\Http\Controllers\Auth\RegisterController;
+use App\Livewire\Auth\Logout;
+use App\Livewire\Dashboard;
+use App\Livewire\LoginForm;
 use App\Livewire\Players;
+use App\Livewire\RegistrationForm;
 use App\Livewire\TeamCreation;
 use App\Livewire\Teams;
+use App\Livewire\Welcome;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
-    Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
-    Route::post('/register', [RegisterController::class, 'register']);
-
-    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [LoginController::class, 'login']);
+    Route::get('/register', RegistrationForm::class)->name('register');
+    Route::get('/login', LoginForm::class)->name('login');
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', Dashboard::class)->name('dashboard');
 
     Route::get('/teams', Teams::class)->name('teams.index');
     Route::get('/players', Players::class)->name('players.index');
 
     Route::get('/create-team', TeamCreation::class)->name('create-team');
 
-
-    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+    Route::post('/logout', Logout::class)->name('logout');
 });
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', Welcome::class)->name('welcome');

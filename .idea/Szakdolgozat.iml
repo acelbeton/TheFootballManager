@@ -133,6 +133,8 @@
       <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/vlucas/phpdotenv" />
       <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/voku/portable-ascii" />
       <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/webmozart/assert" />
+      <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/barryvdh/laravel-debugbar" />
+      <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/maximebf/debugbar" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
