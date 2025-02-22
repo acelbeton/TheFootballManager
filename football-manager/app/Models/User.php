@@ -50,4 +50,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Team::class);
     }
+
+    public function canCreateTeam(): bool
+    {
+        return $this->team()->count() > 0;
+    }
 }

@@ -11,7 +11,7 @@ class Statistic extends Model
 {
     use HasFactory;
 
-    protected $table = 'statistic';
+    protected $table = 'statistics';
 
     protected $fillable = [
         'player_id',

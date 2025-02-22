@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('market', function (Blueprint $table) {
+        Schema::create('market_inputs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('player_id')->constrained('player');
+            $table->foreignId('player_id')->constrained('players');
             $table->foreignId('user_id')->constrained('users');
             $table->integer('current_bid_amount')->default(0);
             $table->dateTime('bidding_end_date')->nullable();
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('market');
+        Schema::dropIfExists('market_inputs');
     }
 };

@@ -10,7 +10,7 @@ class MatchModel extends Model
 {
     use HasFactory;
 
-    protected $table = 'game_match';
+    protected $table = 'game_matches';
 
     protected $fillable = [
         'home_team_id',
@@ -29,6 +29,4 @@ class MatchModel extends Model
     {
         return $this->belongsTo(Team::class, 'away_team_id');
     }
-
-
 }

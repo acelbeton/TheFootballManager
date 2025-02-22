@@ -135,6 +135,8 @@
       <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/webmozart/assert" />
       <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/barryvdh/laravel-debugbar" />
       <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/maximebf/debugbar" />
+      <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/barryvdh/laravel-ide-helper" />
+      <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/barryvdh/reflection-docblock" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

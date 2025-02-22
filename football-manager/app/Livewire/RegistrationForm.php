@@ -32,7 +32,7 @@ class RegistrationForm extends Component
 
         Auth::login($user);
 
-        $this->redirect(route('dashboard'), navigate: true);
+        $this->redirect(route('create-team'), navigate: true);
     }
 
     public function render()

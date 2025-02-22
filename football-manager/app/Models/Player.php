@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Exception;
@@ -13,7 +15,7 @@ class Player extends Model
 {
     use HasFactory;
 
-    protected $table = 'player';
+    protected $table = 'players';
 
     protected $fillable = [
         'name',
@@ -38,13 +40,19 @@ class Player extends Model
                 throw new Exception('Condition must be between 1 and 100.');
             }
         });
+
+        self::created(function (Player $player) {
+            Statistic::create([
+                'player_id'
+            ]);
+        });
     }
 
     public function getRatingAttribute(): int
     {
         return $this->statistics()
             ->selectRaw('AVG(attacking + defending + stamina + technical_skills + speed + tactical_sense) / 6 AS avg_rating')
-            ->value('avg_rating');
+            ->value('rating');
     }
 
     public function statistics(): HasOne

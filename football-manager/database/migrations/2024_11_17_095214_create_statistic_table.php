@@ -12,9 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('statistic', function (Blueprint $table) {
+        Schema::create('statistics', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('player_id')->constrained('player');
+            $table->foreignId('player_id')->constrained('players');
             $table->integer('attacking');
             $table->integer('defending');
             $table->integer('stamina');
@@ -32,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('statistic');
+        Schema::dropIfExists('statistics');
     }
 };

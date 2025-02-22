@@ -15,7 +15,7 @@ class TeamFactory extends Factory
             'user_id' => null,
             'name' => $this->faker->unique()->company,
             'current_tactic' => 'DEFAULT_MODE',
-            'team_rating' => 0,
+            'team_quality' => 0,
             'team_budget' => 10000,
         ];
     }

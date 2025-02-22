@@ -11,7 +11,7 @@ class PlayerPerformance extends Model
 {
     use HasFactory;
 
-    protected $table = 'players_performance';
+    protected $table = 'players_performances';
 
     protected $fillable = [
         'player_id',

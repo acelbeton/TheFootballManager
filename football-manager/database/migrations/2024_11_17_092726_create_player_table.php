@@ -12,11 +12,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('player', function (Blueprint $table) {
+        Schema::create('players', function (Blueprint $table) {
             $table->id();
             $table->string('name');
             $table->integer('rating')->default(0); // Statistic-bol jon ossze
-            $table->foreignId('team_id')->nullable()->constrained('team')->onDelete('SET NULL');
+            $table->foreignId('team_id')->nullable()->constrained('teams')->onDelete('SET NULL');
             $table->enum('position', ['goalkeeper', 'centre-back', 'fullback', 'midfielder', 'winger', 'striker']);
             $table->integer('market_value')->default(0);
             $table->boolean('is_on_market')->default(true);
@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('player');
+        Schema::dropIfExists('players');
     }
 };

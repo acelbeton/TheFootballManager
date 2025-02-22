@@ -11,10 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('standing', function (Blueprint $table) {
+        Schema::create('standings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('league_id')->constrained('league');
-            $table->foreignId('team_id')->constrained('team');
+            $table->foreignId('season_id')->constrained('seasons');
+            $table->foreignId('team_id')->constrained('teams');
             $table->integer('goals_scored')->default(0);
             $table->integer('goals_conceded')->default(0);
             $table->integer('points')->default(0);
@@ -24,7 +24,7 @@ return new class extends Migration
             $table->integer('matches_lost')->default(0);
             $table->timestamps();
 
-            $table->index(['league_id', 'team_id','points']);
+            $table->index(['season_id', 'team_id','points']);
         });
     }
 
@@ -33,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('standing');
+        Schema::dropIfExists('standings');
     }
 };

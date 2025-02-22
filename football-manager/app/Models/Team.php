@@ -11,11 +11,13 @@ class Team extends Model
 {
     use HasFactory;
 
-    protected $table = 'team';
+    protected $table = 'teams';
     protected $fillable = [
         'name',
         'user_id',
+        'season_id',
         'current_tactic',
+        'season_id',
     ];
 
     protected $casts = ['team_budget' => 'float'];
@@ -31,10 +33,15 @@ class Team extends Model
         return $this->hasMany(Player::class);
     }
 
+    public function season(): BelongsTo
+    {
+        return $this->belongsTo(Season::class, 'season_id');
+    }
+
     public function getTeamQualityAttribute(): int
     {
         return $this->player()
             ->selectRaw('AVG(rating) as team_rating')
-            ->value('team_rating');
+            ->value('team_quality');
     }
 }

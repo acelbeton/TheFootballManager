@@ -10,7 +10,7 @@ class Market extends Model
 {
     use HasFactory;
 
-    protected $table = 'market';
+    protected $table = 'markets';
     protected $fillable = [
         'player_id',
         'current_bid_amount',

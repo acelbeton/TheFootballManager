@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('leagues', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->foreignId('created_by')->nullable()->constrained('users');
-            $table->timestamps();
+        Schema::table('seasons', function (Blueprint $table) {
+            $table->boolean('open')->default(true)->change();
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('leagues');
+        Schema::table('seasons', function (Blueprint $table) {
+            $table->string('open')->change();
+        });
     }
 };
