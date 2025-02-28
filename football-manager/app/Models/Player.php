@@ -33,26 +33,24 @@ class Player extends Model
         parent::boot();
 
         self::saving(function (Player $player) {
-            if ($player->rating < 1 || $player->rating > 100) {
+            if ($player->statistics && ($player->rating < 1 || $player->rating > 100)) {
                 throw new Exception('Rating must be between 1 and 100.');
             }
             if ($player->condition < 1 || $player->condition > 100) {
                 throw new Exception('Condition must be between 1 and 100.');
             }
         });
-
-        self::created(function (Player $player) {
-            Statistic::create([
-                'player_id'
-            ]);
-        });
     }
 
     public function getRatingAttribute(): int
     {
-        return $this->statistics()
-            ->selectRaw('AVG(attacking + defending + stamina + technical_skills + speed + tactical_sense) / 6 AS avg_rating')
-            ->value('rating');
+        $stat = $this->statistics;
+        if (!$stat) {
+            return 0;
+        }
+        return (int) round(
+            ($stat->attacking + $stat->defending + $stat->stamina + $stat->technical_skills + $stat->speed + $stat->tactical_sense) / 6
+        );
     }
 
     public function statistics(): HasOne

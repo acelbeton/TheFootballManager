@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Http\Enums\PlayerPosition;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -23,15 +24,16 @@ class Statistic extends Model
         'tactical_sense'
     ];
 
-    public static function boot() {
+    public static function boot()
+    {
         parent::boot();
 
-        static::saving(function($statistic) {
-           foreach (['attacking', 'defending', 'stamina', 'technical_skills', 'speed', 'tactical_sense'] as $field) {
-               if ($statistic->field < 1 || $statistic->field > 100) {
-                   throw new Exception("Statistic $field must be between 1 and 100");
-               }
-           }
+        static::saving(function ($statistic) {
+            foreach (['attacking', 'defending', 'stamina', 'technical_skills', 'speed', 'tactical_sense'] as $field) {
+                if ($statistic->field && ($statistic->field < 1 || $statistic->field > 100)) {
+                    throw new Exception("Statistic $field must be between 1 and 100");
+                }
+            }
         });
     }
 

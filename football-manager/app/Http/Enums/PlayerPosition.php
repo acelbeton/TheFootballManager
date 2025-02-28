@@ -2,12 +2,12 @@
 
 namespace App\Http\Enums;
 
-enum PlayerPosition
+enum PlayerPosition: string
 {
-    case GOALKEEPER;
-    case CENTRE_BACK;
-    case FULLBACK;
-    case MIDFIELDER;
-    case WINGER;
-    case STRIKER;
+    case GOALKEEPER = 'GOALKEEPER';
+    case CENTRE_BACK = 'CENTRE_BACK';
+    case FULLBACK = 'FULLBACK';
+    case MIDFIELDER = 'MIDFIELDER';
+    case WINGER = 'WINGER';
+    case STRIKER = 'STRIKER';
 }

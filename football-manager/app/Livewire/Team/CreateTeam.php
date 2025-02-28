@@ -2,10 +2,13 @@
 
 namespace App\Livewire\Team;
 
+use App\Helpers\StatsHelper;
+use App\Http\Enums\PlayerPosition;
 use App\Http\Enums\PrizeMoney;
 use App\Models\League;
 use App\Models\Player;
 use App\Models\Season;
+use App\Models\Statistic;
 use App\Models\Team;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -27,7 +30,6 @@ class CreateTeam extends Component
     public function createTeam()
     {
         $this->validate();
-
 
         $league = $this->leagues->find($this->selectedLeagueId);
 
@@ -58,19 +60,24 @@ class CreateTeam extends Component
     private function assignRandomPlayers(Team $team)
     {
         $positions = [
-            'goalkeeper' => 2,
-            'centre-back' => 4,
-            'fullback' => 2,
-            'midfielder' => 6,
-            'winger' => 2,
-            'striker' => 2,
+            PlayerPosition::GOALKEEPER->value => 2,
+            PlayerPosition::CENTRE_BACK->value => 3,
+            PlayerPosition::FULLBACK->value => 2,
+            PlayerPosition::MIDFIELDER->value => 4,
+            PlayerPosition::WINGER->value => 2,
+            PlayerPosition::STRIKER->value => 2,
         ];
 
         foreach ($positions as $position => $count) {
             Player::factory($count)->create([
-                'team_id' => $team->id,
+                'team_id'  => $team->id,
                 'position' => $position,
-            ]);
+            ])->each(function ($player) use ($position) {
+                $enumPosition = PlayerPosition::from($position);
+//                dd($enumPosition);
+                $stats = StatsHelper::getStatsForPosition($enumPosition);
+                $player->statistics()->create($stats);
+            });
         }
 
         $this->updateTeamRating($team);
@@ -79,9 +86,7 @@ class CreateTeam extends Component
     private function updateTeamRating(Team $team)
     {
         $team->update([
-            'team_rating' => round(
-                $team->players()->avg('rating')
-            ),
+            'team_rating' => (int) $team->players()->avg('rating')
         ]);
     }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,17 +20,18 @@ class Team extends Model
         'season_id',
         'current_tactic',
         'season_id',
+        'team_rating',
     ];
 
     protected $casts = ['team_budget' => 'float'];
-    protected $appends = ['team_quality'];
+//    protected $appends = ['team_rating'];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function player(): HasMany
+    public function players(): HasMany
     {
         return $this->hasMany(Player::class);
     }
@@ -38,10 +41,15 @@ class Team extends Model
         return $this->belongsTo(Season::class, 'season_id');
     }
 
-    public function getTeamQualityAttribute(): int
+
+    // Ez lehet, hogy nem kell, mivel most fillable a team_rating
+    public function getTeamRatingAttribute(): int
     {
-        return $this->player()
-            ->selectRaw('AVG(rating) as team_rating')
-            ->value('team_quality');
+        $players = $this->players;
+        if ($players->isEmpty()) {
+            return 0;
+        }
+
+        return (int) $players->avg($players->rating);
     }
 }
