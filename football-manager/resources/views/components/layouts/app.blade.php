@@ -3,19 +3,29 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+        @vite('resources/sass/main.scss')
         <title>{{ $title ?? 'Page Title' }}</title>
     </head>
     <body>
-    <nav>
-        <a href="/" wire:navigate>Home</a>
-        @auth
-            @livewire('auth.logout')
-        @else
-            <a href="/login" wire:navigate>Login</a>
-            <a href="/register" wire:navigate>Register</a>
-        @endauth
-    </nav>
+        <nav class="custom-nav">
+            <ul class="nav-list">
+                <li class="nav-item">
+                    <a class="nav-link" href="/" wire:navigate>Home</a>
+                </li>
+                @auth
+                    <li class="nav-item">
+                        @livewire('auth.logout')
+                    </li>
+                @else
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login" wire:navigate>Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/register" wire:navigate>Register</a>
+                    </li>
+                @endauth
+            </ul>
+        </nav>
         {{ $slot }}
     </body>
 </html>
