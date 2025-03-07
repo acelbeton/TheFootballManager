@@ -1,0 +1,90 @@
+@use '../abstract/variables' as vars;
+
+.custom-nav {
+    background-color: vars.$color-primary;
+    font-family: vars.$font-primary;
+    padding: 1rem 2rem;
+    box-shadow: vars.$shadow-sm;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+
+    .nav-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .nav-brand {
+        font-family: vars.$font-brand;
+        font-size: 1.5rem;
+        font-weight: vars.$font-weight-bold;
+        color: vars.$color-background;
+    }
+
+    .nav-list {
+        display: flex;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        gap: vars.$spacing-lg;
+    }
+
+    .nav-item {
+        position: relative;
+    }
+
+    .nav-link {
+        text-decoration: none;
+        color: vars.$color-background;
+        font-weight: vars.$font-weight-semi-bold;
+        transition: color 0.2s ease;
+        padding: 0.5rem 0;
+
+        &::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: vars.$color-text;
+            transition: width 0.3s ease;
+        }
+
+        &:hover,
+        &:focus {
+            color: vars.$color-text;
+
+            &::after {
+                width: 100%;
+            }
+        }
+
+        &.active {
+            color: vars.$color-text;
+
+            &::after {
+                width: 100%;
+            }
+        }
+    }
+
+    .nav-logout {
+        background: transparent;
+        border: none;
+        color: vars.$color-text;
+        font-size: 1rem;
+        font-weight: vars.$font-weight-semi-bold;
+        cursor: pointer;
+        transition: color 0.2s ease;
+        padding: 0.5rem 1rem;
+        border-radius: vars.$border-radius-md;
+
+        &:hover,
+        &:focus {
+            color: vars.$color-warning;
+            background-color: rgba(vars.$color-warning, 0.1);
+        }
+    }
+}

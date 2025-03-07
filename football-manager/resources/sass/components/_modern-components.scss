@@ -1,0 +1,116 @@
+@use '../abstract/variables' as vars;
+
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 3.5rem;
+    height: 2rem;
+
+    input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+
+        &:checked + .toggle-slider {
+            background-color: vars.$color-primary;
+
+            &:before {
+                transform: translateX(1.5rem);
+            }
+        }
+
+        &:focus + .toggle-slider {
+            box-shadow: 0 0 0 2px rgba(vars.$color-primary, 0.3);
+        }
+
+        &:disabled + .toggle-slider {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    }
+
+    .toggle-slider {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: vars.$color-disabled;
+        border-radius: 2rem;
+        transition: background-color 0.3s ease;
+        cursor: pointer;
+
+        &:before {
+            content: '';
+            position: absolute;
+            height: 1.5rem;
+            width: 1.5rem;
+            left: 0.25rem;
+            bottom: 0.25rem;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+    }
+}
+
+/* Modern tabs (if not using Bootstrap tabs) */
+.modern-tabs {
+    margin-bottom: vars.$spacing-lg;
+
+    .tabs-nav {
+        display: flex;
+        border-bottom: 1px solid vars.$color-section-background;
+        margin-bottom: vars.$spacing-md;
+
+        .tab-item {
+            padding: vars.$spacing-sm vars.$spacing-md;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s ease;
+
+            &:after {
+                content: '';
+                position: absolute;
+                bottom: -1px;
+                left: 0;
+                width: 100%;
+                height: 2px;
+                background-color: transparent;
+                transition: background-color 0.2s ease;
+            }
+
+            &:hover {
+                color: vars.$color-primary;
+            }
+
+            &.active {
+                color: vars.$color-primary;
+                font-weight: vars.$font-weight-semi-bold;
+
+                &:after {
+                    background-color: vars.$color-primary;
+                }
+            }
+        }
+    }
+}
+
+/* Modern badge (if not using Bootstrap badges) */
+.modern-badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: vars.$font-weight-semi-bold;
+    border-radius: vars.$border-radius-sm;
+
+    &.badge-primary {
+        background-color: vars.$color-primary;
+        color: white;
+    }
+
+    &.badge-highlight {
+        background-color: vars.$color-highlight;
+        color: white;
+    }
+}

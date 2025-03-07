@@ -1,0 +1,29 @@
+@use '../abstract/variables' as vars;
+
+.card {
+    background-color: vars.$color-background;
+    border-radius: vars.$border-radius-md;
+    border: none;
+    box-shadow: vars.$shadow-md;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+    &:hover {
+        transform: translateY(-5px);
+        box-shadow: vars.$shadow-lg;
+    }
+}
+
+.card-header {
+    padding: vars.$spacing-md vars.$spacing-lg;
+    border-bottom: 1px solid vars.$color-section-background;
+}
+
+.card-body {
+    padding: vars.$spacing-lg;
+}
+
+.card-footer {
+    padding: vars.$spacing-md vars.$spacing-lg;
+    border-top: 1px solid vars.$color-section-background;
+}

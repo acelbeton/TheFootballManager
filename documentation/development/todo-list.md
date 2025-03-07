@@ -7,7 +7,7 @@
   * Liga infó &rarr; Melyikben van, hanyadik hétnél tart
   * Jövőbeli meccsek maybe?
   * Idk még mit lehet
-- [ ] Design felépítése scss szinten is
+- [x] Design felépítése scss szinten is
   - scss/
     * abstracts/   // Variables, mixins, functions, placeholders
     * base/        // Resets, typography, base styles
@@ -18,4 +18,5 @@
     * vendors/     // Third-party styles
     * main.scss    // Main file importing all partials
 
-- [ ] Dashboard, Login, Register design
+- [x] Dashboard, Login, Register design
+  * A login és register elkészült, a dashboard még nem &rarr; gondolkodni hogyan nézzen ki

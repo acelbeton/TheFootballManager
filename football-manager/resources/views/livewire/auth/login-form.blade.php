@@ -1,24 +1,25 @@
- <div class="container mt-5">
-    <h2>Login</h2>
-
-    <form wire:submit="login">
-        @csrf
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" wire:model="email" name="email" id="email" class="form-control" required>
-            <div>
-                @error('email') <span class="error">{{ $message }}</span> @enderror
+ <div class="d-flex justify-content-center align-items-center m-5">
+    <div class="auth-card">
+        <h2 class="auth-card-title">Login</h2>
+        <form wire:submit="login">
+            @csrf
+            <div class="input-group mb-3">
+                <input type="email" wire:model="email" name="email" id="email" class="input" required>
+                <label for="email" class="input-label">Email</label>
+                <div>
+                    @error('email') <span class="error">{{ $message }}</span> @enderror
+                </div>
             </div>
-        </div>
 
-        <div class="mb-3">
-            <label for="password" class="form-label">Password</label>
-            <input type="password" wire:model="password" name="password" id="password" class="form-control" required>
-            <div>
-                @error('password') <span class="error">{{ $message }}</span> @enderror
+            <div class="input-group mb-3">
+                <input type="password" wire:model="password" name="password" id="password" class="input" required>
+                <label for="password" class="input-label">Password</label>
+                <div>
+                    @error('password') <span class="error">{{ $message }}</span> @enderror
+                </div>
             </div>
-        </div>
 
-        <button type="submit" class="btn btn-primary">Login</button>
-    </form>
+            <button type="submit" class="button button-primary w-100">Login</button>
+        </form>
+    </div>
  </div>

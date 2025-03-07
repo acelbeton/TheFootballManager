@@ -1,28 +1,49 @@
 // Colors
-$color-primary: #003366;
-$color-highlight: #28A745;
-$color-background: #FFFFFF;
-$color-section-backround: #F4F4F4;
-$color-text: #555555;
-$color-premium: #FFD700;
-$color-warning: #DC3545;
-$color-information: #17A2B8;
-$color-disabled: #A0A0A0;
+$color-primary: #4361EE;       // Modern blue
+$color-highlight: #21D19F;     // Vibrant teal
+$color-background: #FFFFFF;    // Clean white
+$color-section-background: #F8F9FA; // Lighter gray
+$color-text: #383838;          // Darker text for better readability
+$color-premium: #FFD166;       // Muted gold
+$color-warning: #FF5757;       // Softer red
+$color-information: #4CC9F0;   // Bright blue
+$color-disabled: #AAAAAA;      // Subtle gray
+$color-primary-hover: lighten($color-primary, 10%);
 
 // Fonts
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=Oswald:wght@400;700&family=Poppins:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&family=Roboto+Mono&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
 
 // Font styles
 $font-primary: 'Poppins', sans-serif;
 $font-heading: 'Montserrat', sans-serif;
 $font-accent: 'Oswald', sans-serif;
 $font-mono: 'Roboto', monospace;
+$font-brand: 'Lobster', cursive;
 
 // Font weights
 $font-weight-bold: 700;
-$font-weight-normal: 500;
+$font-weight-semi-bold: 600;
+$font-weight-normal: 400;
 $font-weight-light: 300;
 
+// Font size
+$base-font-size: 1rem;
 
+// Spacing
+$spacing-xs: 0.25rem;
+$spacing-sm: 0.5rem;
+$spacing-md: 1rem;
+$spacing-lg: 1.5rem;
+$spacing-xl: 2rem;
 
+// Border radius
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 16px;
+$border-radius-xl: 24px;
 
+// Shadows
+$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);

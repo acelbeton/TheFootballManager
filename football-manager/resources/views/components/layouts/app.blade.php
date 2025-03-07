@@ -8,23 +8,26 @@
     </head>
     <body>
         <nav class="custom-nav">
-            <ul class="nav-list">
-                <li class="nav-item">
-                    <a class="nav-link" href="/" wire:navigate>Home</a>
-                </li>
-                @auth
+            <div class="nav-container">
+                <a href="/" wire:navigate class="nav-brand">Football Manager</a>
+                <ul class="nav-list">
                     <li class="nav-item">
-                        @livewire('auth.logout')
+                        <a class="nav-link" href="/" wire:navigate>Home</a>
                     </li>
-                @else
-                    <li class="nav-item">
-                        <a class="nav-link" href="/login" wire:navigate>Login</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/register" wire:navigate>Register</a>
-                    </li>
-                @endauth
-            </ul>
+                    @auth
+                        <li class="nav-item">
+                            @livewire('auth.logout')
+                        </li>
+                    @else
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login" wire:navigate>Login</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/register" wire:navigate>Register</a>
+                        </li>
+                    @endauth
+                </ul>
+            </div>
         </nav>
         {{ $slot }}
     </body>

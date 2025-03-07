@@ -1,0 +1,50 @@
+@use '../abstract/variables' as vars;
+
+.input-group {
+    position: relative;
+    margin-bottom: vars.$spacing-lg;
+}
+
+.input {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: vars.$color-text;
+    background-color: vars.$color-background;
+    border: 1px solid #E0E0E0;
+    border-radius: vars.$border-radius-md;
+    transition: all 0.3s ease;
+
+    &:focus {
+        border-color: vars.$color-primary;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(vars.$color-primary, 0.2);
+    }
+
+    &:disabled {
+        background-color: vars.$color-section-background;
+        cursor: not-allowed;
+        opacity: 0.7;
+    }
+}
+
+.input-label {
+    position: absolute;
+    top: -0.75rem;
+    left: 0.75rem;
+    padding: 0 0.5rem;
+    background-color: vars.$color-background;
+    font-size: 0.875rem;
+    color: vars.$color-text;
+    transition: all 0.2s ease;
+    pointer-events: none;
+}
+
+.input-icon {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    color: vars.$color-text;
+}

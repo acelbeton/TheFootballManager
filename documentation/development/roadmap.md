@@ -35,11 +35,11 @@
        * Háttér szín: #FFFFFF
      - Másodlagos színek:
        * Háttérszín szekcióknak: #F4F4F4
-       * Halvány szín: #555555 &rarr Szövegszín, borderszín, másodlagos elemek
-       * Premium szín (nem hiszem hogy használom): #FFD700 &rarr Speciális dolgokra
+       * Halvány szín: #555555 &rarr; Szövegszín, borderszín, másodlagos elemek
+       * Premium szín (nem hiszem hogy használom): #FFD700 &rarr; Speciális dolgokra
      - Interaktív színek:
-       * Hiba/Figyelmeztetés: #DC3545 &rarr Alertek, túl lett licitálva a játékos jelzés
-       * Információs: #17A2B8 &rarr Hintek, Meccs kommentálásnál szövegszín maybe
+       * Hiba/Figyelmeztetés: #DC3545 &rarr; Alertek, túl lett licitálva a játékos jelzés
+       * Információs: #17A2B8 &rarr; Hintek, Meccs kommentálásnál szövegszín maybe
        * Kikapcsolt elemek jelzése: #A0A0A0
    - #### Milyen view-k kellenek?
      - Frontpage &rarr; **TBA**

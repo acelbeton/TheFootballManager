@@ -1,0 +1,87 @@
+// Components: _buttons.scss
+@use '../abstract/variables' as vars;
+
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: vars.$base-font-size;
+    font-weight: vars.$font-weight-semi-bold;
+    text-align: center;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    border-radius: vars.$border-radius-md;
+    transition: all 0.2s ease;
+    box-shadow: vars.$shadow-sm;
+    gap: 0.5rem;
+}
+
+.button:disabled,
+.button.disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+.button-primary {
+    background-color: vars.$color-primary;
+    color: vars.$color-background;
+}
+
+.button-primary:hover {
+    background-color: vars.$color-primary-hover;
+    transform: translateY(-2px);
+    box-shadow: vars.$shadow-md;
+}
+
+.button-primary:active {
+    transform: translateY(0);
+    box-shadow: vars.$shadow-sm;
+}
+
+.button-secondary {
+    background-color: transparent;
+    color: vars.$color-primary;
+    border: 2px solid vars.$color-primary;
+}
+
+.button-secondary:hover {
+    background-color: rgba(vars.$color-primary, 0.1);
+    transform: translateY(-2px);
+    box-shadow: vars.$shadow-sm;
+}
+
+.button-warning {
+    background-color: vars.$color-warning;
+    color: vars.$color-background;
+}
+
+.button-warning:hover {
+    background-color: darken(vars.$color-warning, 5%);
+    transform: translateY(-2px);
+    box-shadow: vars.$shadow-md;
+}
+
+// Ghost button style
+.button-ghost {
+    background-color: transparent;
+    color: vars.$color-primary;
+    box-shadow: none;
+}
+
+.button-ghost:hover {
+    background-color: rgba(vars.$color-primary, 0.1);
+}
+
+// Circle button for icons
+.button-circle {
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}

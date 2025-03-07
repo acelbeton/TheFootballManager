@@ -3,18 +3,39 @@
 body {
     font-family: vars.$font-primary;
     font-size: 16px;
+    line-height: 1.5;
     color: vars.$color-text;
     background-color: vars.$color-background;
-    margin: 0;
-    height: 100% !important;
-    position: absolute;
-    width: 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 h1, h2, h3, h4, h5, h6 {
     font-family: vars.$font-heading;
     font-weight: vars.$font-weight-bold;
-    color: vars.$color-primary; // TODO valami más szín maybe?
+    color: vars.$color-text;
+    line-height: 1.2;
 }
 
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
 
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease forwards;
+}
+
+.slide-up {
+    animation: slideUp 0.5s ease forwards;
+}
+
+:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(vars.$color-primary, 0.3);
+}
