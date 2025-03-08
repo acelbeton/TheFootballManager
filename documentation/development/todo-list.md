@@ -20,3 +20,6 @@
 
 - [x] Dashboard, Login, Register design
   * A login és register elkészült, a dashboard még nem &rarr; gondolkodni hogyan nézzen ki
+
+## 2025.03.08.
+- [ ] Dashboard layout elkészítése
