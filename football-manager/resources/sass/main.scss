@@ -11,5 +11,8 @@
 @use 'pages/auth-form';
 @use 'layout/navigation';
 @use 'components/inputs';
+@use 'components/selects';
 @use 'components/modern-components';
 @use 'components/cards';
+@use 'base/utility_styles';
+@use 'pages/home';

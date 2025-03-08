@@ -1,0 +1,41 @@
+@use '../abstract/variables' as vars;
+
+.hero {
+    background-color: vars.$color-background;
+    padding: vars.$spacing-xl;
+    text-align: center;
+
+    .p {
+        font-size: vars.$font-size-md;
+        margin-bottom: vars.$spacing-xl;
+        max-width: 800px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .h1 {
+        font-size: vars.$font-size-lg;
+        margin-bottom: vars.$spacing-md;
+    }
+}
+
+.features {
+    background-color: vars.$color-section-background;
+
+    h2 {
+        font-size: vars.$font-size-lg;
+    }
+
+    h3 {
+        font-size: vars.$font-size-md;
+    }
+
+    p {
+        font-size: vars.$base-font-size;
+    }
+}
+
+.feature-grid-template {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+}

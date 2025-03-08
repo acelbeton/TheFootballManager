@@ -32,10 +32,9 @@ class CreateTeam extends Component
         $this->validate();
 
         $league = $this->leagues->find($this->selectedLeagueId);
-
-        $season = Season::where('league_id', $league->id)
+        $season = Season::where('league_id', $league->getKey())
             ->firstOrCreate([
-                'league_id' => $league->id,
+                'league_id' => $league->getKey(),
                 'start_date' => now(),
                 'open' => true,
                 'end_date' => now()->addWeeks(4),
@@ -74,7 +73,6 @@ class CreateTeam extends Component
                 'position' => $position,
             ])->each(function ($player) use ($position) {
                 $enumPosition = PlayerPosition::from($position);
-//                dd($enumPosition);
                 $stats = StatsHelper::getStatsForPosition($enumPosition);
                 $player->statistics()->create($stats);
             });

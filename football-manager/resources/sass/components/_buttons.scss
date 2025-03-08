@@ -28,6 +28,7 @@
 .button-primary {
     background-color: vars.$color-primary;
     color: vars.$color-background;
+    border: 2px solid vars.$color-primary;
 }
 
 .button-primary:hover {
