@@ -7,6 +7,7 @@ use App\Livewire\Players;
 use App\Livewire\RegistrationForm;
 use App\Livewire\Team\CreateTeam;
 use App\Livewire\Teams;
+use App\Livewire\TeamSelection;
 use App\Livewire\Welcome;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/players', Players::class)->name('players.index');
 
     Route::get('/create-team', CreateTeam::class)->name('create-team');
+
+    Route::get('/change-team', TeamSelection::class)->name('change-team');
 
     Route::post('/logout', Logout::class)->name('logout');
 });

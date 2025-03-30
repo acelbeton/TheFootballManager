@@ -10,6 +10,7 @@ use App\Models\Player;
 use App\Models\Season;
 use App\Models\Statistic;
 use App\Models\Team;
+use Auth;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
@@ -50,6 +51,8 @@ class CreateTeam extends Component
             'user_id' => auth()->id(),
             'season_id' => $season->getKey(),
         ]);
+
+        Auth::user()->update(['current_team_id' => $team->getKey()]);
 
         $this->assignRandomPlayers($team);
 

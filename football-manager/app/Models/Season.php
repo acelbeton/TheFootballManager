@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Season extends Model
 {
@@ -34,6 +35,11 @@ class Season extends Model
     public function teams(): HasMany
     {
         return $this->hasMany(Team::class, 'season_id');
+    }
+
+    public function standing(): HasOne
+    {
+        return $this->hasOne(Standing::class);
     }
 
 }

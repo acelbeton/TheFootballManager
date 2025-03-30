@@ -22,11 +22,6 @@ class League extends Model
         'created_by',
     ];
 
-    public function standing(): HasOne
-    {
-        return $this->hasOne(Standing::class);
-    }
-
     public function season(): HasMany
     {
         return $this->hasMany(Season::class);

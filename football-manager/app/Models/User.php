@@ -48,7 +48,7 @@ class User extends Authenticatable
         ];
     }
 
-    public function team(): HasMany
+    public function teams(): HasMany
     {
         return $this->hasMany(Team::class);
     }

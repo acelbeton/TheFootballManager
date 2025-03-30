@@ -25,9 +25,9 @@ class Standing extends Model
         'matches_lost',
     ];
 
-    public function league(): BelongsTo
+    public function season(): BelongsTo
     {
-        return $this->belongsTo(League::class);
+        return $this->belongsTo(Season::class);
     }
 
     public function team(): BelongsTo

@@ -137,8 +137,12 @@
       <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/maximebf/debugbar" />
       <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/barryvdh/laravel-ide-helper" />
       <excludeFolder url="file://$MODULE_DIR$/football-manager/vendor/barryvdh/reflection-docblock" />
+      <excludeFolder url="file://$MODULE_DIR$/football-manager/storage/app" />
+      <excludeFolder url="file://$MODULE_DIR$/football-manager/storage/debugbar" />
+      <excludeFolder url="file://$MODULE_DIR$/football-manager/storage/framework" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" name="alpinejs" level="application" />
   </component>
 </module>

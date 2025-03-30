@@ -29,6 +29,8 @@
                 </ul>
             </div>
         </nav>
-        {{ $slot }}
+        <div>
+            {{ $slot }}
+        </div>
     </body>
 </html>
