@@ -97,6 +97,10 @@ class CreateTeam extends Component
     }
     public function render()
     {
+        if (Auth::user()->teams()->count() > 3) {
+            return redirect()->route('dashboard');
+        }
+
         return view('livewire.team.create-team');
     }
 }

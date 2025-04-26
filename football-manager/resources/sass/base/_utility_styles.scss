@@ -19,6 +19,7 @@
 .rounded-lg { border-radius: vars.$border-radius-lg; }
 .rounded-xl { border-radius: vars.$border-radius-xl; }
 .rounded-full { border-radius: 9999px; }
+
 .alert {
     padding: vars.$spacing-md vars.$spacing-lg;
     border-radius: vars.$border-radius-md;
@@ -60,38 +61,50 @@
         }
     }
 }
+
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
+    height: 100%;
+    width: 100%;
     background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: none; /* Start hidden */
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    visibility: hidden;
     opacity: 0;
-    transition: visibility 0.3s ease, opacity 0.3s ease;
+    transition: opacity 0.3s ease;
+
     &.active {
-        visibility: visible;
+        display: flex;
         opacity: 1;
     }
 }
+
 .modal {
     background-color: vars.$color-background;
-    border-radius: vars.$border-radius-lg;
     width: 100%;
-    max-width: 500px;
-    max-height: 90vh;
     overflow-y: auto;
     box-shadow: vars.$shadow-lg;
-    transform: translateY(20px);
-    transition: transform 0.3s ease;
+    transition: opacity 0.3s ease;
+    z-index: 1001;
+
     .modal-overlay.active & {
         transform: translateY(0);
     }
+
+    .modal-overlay:not(.active) & {
+        transform: translateY(20px);
+    }
+
+    &.d-block {
+        display: block !important;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+
     .modal-header {
         padding: vars.$spacing-md vars.$spacing-lg;
         border-bottom: 1px solid vars.$color-section-background;
@@ -118,9 +131,11 @@
             }
         }
     }
+
     .modal-body {
         padding: vars.$spacing-lg;
     }
+
     .modal-footer {
         padding: vars.$spacing-md vars.$spacing-lg;
         border-top: 1px solid vars.$color-section-background;
@@ -128,6 +143,14 @@
         justify-content: flex-end;
         gap: vars.$spacing-md;
     }
+}
+
+.modal-backdrop {
+    z-index: 1040; /* Below modal */
+}
+
+.modal {
+    z-index: 1050; /* Above backdrop */
 }
 
 .hidden {

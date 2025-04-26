@@ -16,6 +16,12 @@
                     </li>
                     @auth
                         <li class="nav-item">
+                            <a class="nav-link" href="{{ route('dashboard') }}" wire:navigate>Dashboard</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ route('change-team') }}" wire:navigate>Change Team</a>
+                        </li>
+                        <li class="nav-item">
                             @livewire('auth.logout')
                         </li>
                     @else
@@ -29,7 +35,7 @@
                 </ul>
             </div>
         </nav>
-        <div>
+        <div class="main-content">
             {{ $slot }}
         </div>
     </body>

@@ -33,8 +33,7 @@
 
 .button-primary:hover {
     background-color: vars.$color-primary-hover;
-    transform: translateY(-2px);
-    box-shadow: vars.$shadow-md;
+    transform: scale(1.02);
 }
 
 .button-primary:active {
@@ -55,14 +54,13 @@
 }
 
 .button-warning {
-    background-color: vars.$color-warning;
-    color: vars.$color-background;
+    background: transparent;
+    border: solid 1px vars.$color-warning;
+    color: vars.$color-warning;
 }
 
 .button-warning:hover {
-    background-color: darken(vars.$color-warning, 5%);
-    transform: translateY(-2px);
-    box-shadow: vars.$shadow-md;
+    background: rgba(vars.$color-warning, 0.08);
 }
 
 // Ghost button style

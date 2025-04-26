@@ -7,6 +7,12 @@
     box-shadow: vars.$shadow-md;
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    padding: vars.$spacing-md !important;
+
+    .card-title {
+        display: flex;
+        justify-content: center;
+    }
 
     &:hover {
         transform: translateY(-5px);
@@ -17,6 +23,8 @@
 .card-header {
     padding: vars.$spacing-md vars.$spacing-lg;
     border-bottom: 1px solid vars.$color-section-background;
+    display: flex;
+    justify-content: center;
 }
 
 .card-body {

@@ -2,13 +2,14 @@
 $color-primary: #4361EE;       // Modern blue
 $color-highlight: #21D19F;     // Vibrant teal
 $color-background: #FFFFFF;    // Clean white
-$color-section-background: #F8F9FA; // Lighter gray
+$color-section-background: #FAF8F5; // Lighter gray
 $color-text: #383838;          // Darker text for better readability
 $color-premium: #FFD166;       // Muted gold
 $color-warning: #FF5757;       // Softer red
 $color-information: #4CC9F0;   // Bright blue
 $color-disabled: #AAAAAA;      // Subtle gray
 $color-primary-hover: lighten($color-primary, 10%);
+$color-border: #E0E0E0;
 
 // Fonts
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@700&family=Roboto+Mono&display=swap');
