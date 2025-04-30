@@ -47,6 +47,10 @@ class Team extends Model
         return $this->belongsTo(Season::class, 'season_id');
     }
 
+    public function trainingSession(): HasMany
+    {
+        return $this->hasMany(TrainingSession::class);
+    }
 
     // Ez lehet, hogy nem kell, mivel most fillable a team_rating
 //    public function getTeamRatingAttribute(): int

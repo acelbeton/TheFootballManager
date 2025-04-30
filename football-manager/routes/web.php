@@ -8,6 +8,7 @@ use App\Livewire\RegistrationForm;
 use App\Livewire\Team\CreateTeam;
 use App\Livewire\Teams;
 use App\Livewire\TeamSelection;
+use App\Livewire\TrainingDashboard;
 use App\Livewire\Welcome;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/create-team', CreateTeam::class)->name('create-team');
 
     Route::get('/change-team', TeamSelection::class)->name('change-team');
+
+    Route::get('/team-training', TrainingDashboard::class)->name('team-training');
 
     Route::post('/logout', Logout::class)->name('logout');
 });

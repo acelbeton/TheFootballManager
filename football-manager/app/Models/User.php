@@ -58,6 +58,11 @@ class User extends Authenticatable
         return $this->belongsTo(Team::class, 'current_team_id');
     }
 
+    public function trainingSession(): HasMany
+    {
+        return $this->hasMany(TrainingSession::class);
+    }
+
     public function canCreateTeam(): bool
     {
         return $this->team()->count() > 0;
