@@ -5,6 +5,7 @@ namespace App\Livewire;
 use AllowDynamicProperties;
 use App\Http\Enums\TrainingType;
 use App\Models\TrainingSession;
+use App\PlayerStatistics;
 use App\Services\TrainingService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
@@ -16,6 +17,7 @@ class TrainingDashboard extends Component
     public $hasTrainedIndividualToday = false;
     public $trainingHistory;
     public $players;
+    public $statisticNames;
 //    public $lastTrainingResults;
 
     protected $rules = [
@@ -72,6 +74,8 @@ class TrainingDashboard extends Component
             ->latest()
             ->limit(5)
             ->get();
+
+        $this->statisticNames = PlayerStatistics::cases();
     }
 
     public function render()

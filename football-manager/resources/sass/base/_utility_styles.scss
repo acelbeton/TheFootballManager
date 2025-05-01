@@ -156,3 +156,12 @@
 .hidden {
     display: none;
 }
+
+.stat-label {
+    font-size: vars.$font-size-sm;
+    color: vars.$color-text;
+}
+
+.player-stat {
+    font-size: vars.$font-size-stat;
+}
