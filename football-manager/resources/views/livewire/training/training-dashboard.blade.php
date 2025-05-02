@@ -1,6 +1,38 @@
+@php
+    use App\Http\Enums\TrainingType;
+@endphp
+
 <div class="container mx-auto p-4">
-    <div>
-        @include('livewire.training.partials.team-training-card')
+    <div class="row mb-4">
+        <div class="col-md-6 mb-4">
+            @include('livewire.training.partials.team-training-card')
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    Training History
+                </div>
+                <div class="card-body overflow-auto" style="max-height: 300px;">
+                    <ul class="list-group list-group-flush">
+                        @foreach($trainingHistory as $session)
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small>{{ $session->created_at->format('M d, H:i') }}</small>
+                                    <br>
+                                    <span class="badge bg-{{ $session->type === TrainingType::TEAM ? 'primary' : 'warning' }}">
+                                        {{ ucfirst($session->type) }}
+                                    </span>
+                                </div>
+                                <span class="badge bg-secondary">
+                                    {{ $session->participants_count }} players
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
     <div>
         @include('livewire.training.partials.individual-training-card')

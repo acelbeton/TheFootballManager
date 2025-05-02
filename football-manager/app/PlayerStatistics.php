@@ -22,4 +22,16 @@ enum PlayerStatistics: string
             self::TACTICAL_SENSE => 'Tactical Sense',
         };
     }
+
+    public function abbreviation(): string
+    {
+        return match($this) {
+            self::ATTACKING => 'ATK',
+            self::DEFENDING => 'DEF',
+            self::STAMINA => 'STM',
+            self::TECHNICAL_SKILLS => 'TECH',
+            self::SPEED => 'SPD',
+            self::TACTICAL_SENSE => 'TAC',
+        };
+    }
 }

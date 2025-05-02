@@ -25,6 +25,13 @@ class TrainingDashboard extends Component
         'selectedPlayers.*' => 'exists:players,id'
     ];
 
+    protected $listeners = ['updateSelectedPlayersCount' => 'updateCount'];
+
+    public function updateCount($count)
+    {
+        // This is just a dummy method to handle the event
+    }
+
     public function trainTeam()
     {
         if ($this->hasTrainedTeamToday) return;
@@ -55,6 +62,7 @@ class TrainingDashboard extends Component
     public function mount()
     {
         $team = Auth::user()->currentTeam;
+        $this->selectedPlayers = [];
 
         $this->players = $team->players()
             ->with('statistics')
