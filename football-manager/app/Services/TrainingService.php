@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Http\Enums\TrainingType;
 use App\Models\Player;
+use App\Models\TrainingSession;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 
@@ -18,6 +20,12 @@ class TrainingService
         $players = $team->players->load('statistics');
 
         self::getEach($players, 'individual');
+
+        TrainingSession::create([
+            'type' => TrainingType::TEAM,
+            'user_id' => Auth::id(),
+            'team_id' => $team->getKey(),
+        ]);
     }
 
     public static function trainPlayer(array $selectedPlayers)
@@ -25,6 +33,13 @@ class TrainingService
         $players = Player::whereIn('id', $selectedPlayers)->get();
 
         self::getEach($players, 'player');
+
+        TrainingSession::create([
+            'type' => TrainingType::INDIVIDUAL,
+            'user_id' => Auth::id(),
+            'team_id' => Auth::user()->currentTeam->getKey(),
+            'participants' => $players->pluck('id')->toArray(),
+        ]);
     }
 
     /**

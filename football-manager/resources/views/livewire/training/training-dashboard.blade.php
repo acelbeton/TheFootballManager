@@ -15,18 +15,22 @@
                 </div>
                 <div class="card-body overflow-auto" style="max-height: 300px;">
                     <ul class="list-group list-group-flush">
-                        @foreach($trainingHistory as $session)
+                        @foreach($trainingHistory as $session) {{-- TODO add event on change --}}
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <div>
                                     <small>{{ $session->created_at->format('M d, H:i') }}</small>
                                     <br>
-                                    <span class="badge bg-{{ $session->type === TrainingType::TEAM ? 'primary' : 'warning' }}">
+                                    <span class="badge bg-{{ $session->type === TrainingType::TEAM->name ? 'primary' : 'warning' }}">
                                         {{ ucfirst($session->type) }}
                                     </span>
                                 </div>
-                                <span class="badge bg-secondary">
-                                    {{ $session->participants_count }} players
-                                </span>
+                                @if ($session->type === TrainingType::INDIVIDUAL->name)
+                                    <span class="badge bg-secondary">
+                                        @foreach($session->playerParticipants as $participants)
+                                                <span>{{ $participants->name }},</span>  {{-- TODO design/layout change --}}
+                                        @endforeach
+                                    </span>
+                                @endif
                             </li>
                         @endforeach
                     </ul>

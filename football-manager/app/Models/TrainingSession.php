@@ -34,4 +34,9 @@ class TrainingSession extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function getPlayerParticipantsAttribute()
+    {
+        return Player::whereIn('id', $this->participants ?? [])->get();
+    }
 }
