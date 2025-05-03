@@ -23,6 +23,8 @@ class TrainingSession extends Model
         'participants' => 'array'
     ];
 
+    protected $appends = ['player_participants'];
+
     public $timestamps = true;
 
     public function team(): BelongsTo

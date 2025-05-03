@@ -9,6 +9,7 @@ use App\PlayerStatistics;
 use App\Services\TrainingService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use Livewire\Livewire;
 
 class TrainingDashboard extends Component
 {
@@ -25,7 +26,19 @@ class TrainingDashboard extends Component
         'selectedPlayers.*' => 'exists:players,id'
     ];
 
-    protected $listeners = ['updateSelectedPlayersCount' => 'updateCount'];
+    protected $listeners = [
+        'updateSelectedPlayersCount' => 'updateCount',
+        'refreshHistory' => 'refreshTrainingHistory'
+    ];
+
+    protected function refreshTrainingHistory()
+    {
+        $this->trainingHistory = Auth::user()->currentTeam
+            ->trainingSession()
+            ->latest()
+            ->limit(5)
+            ->get(['id', 'type', 'participants', 'created_at']); // Explicitly select needed columns
+    }
 
     public function updateCount($count)
     {
@@ -38,8 +51,9 @@ class TrainingDashboard extends Component
 
         TrainingService::trainTeam();
         $this->hasTrainedTeamToday = true;
+
         $this->players = $this->players->fresh();
-        $this->trainingHistory = $this->trainingHistory->fresh();
+        $this->refreshTrainingHistory();
 
         session()->flash('team-training', 'Team training completed!');
     }
@@ -52,8 +66,9 @@ class TrainingDashboard extends Component
 
         TrainingService::trainPlayer($this->selectedPlayers);
         $this->hasTrainedIndividualToday = true;
+
         $this->players = $this->players->fresh();
-        $this->trainingHistory = $this->trainingHistory->fresh();
+        $this->refreshTrainingHistory();
         $this->reset('selectedPlayers');
 
         session()->flash('individual-training', 'Individual training completed!');
