@@ -1,8 +1,10 @@
 <?php
 
+use App\Http\Controllers\MarketController;
 use App\Livewire\Auth\Logout;
 use App\Livewire\Dashboard;
 use App\Livewire\LoginForm;
+use App\Livewire\PlayerMarket;
 use App\Livewire\Players;
 use App\Livewire\RegistrationForm;
 use App\Livewire\Team\CreateTeam;
@@ -30,6 +32,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/team-training', TrainingDashboard::class)->name('team-training');
 
     Route::post('/logout', Logout::class)->name('logout');
+
+    // Market
+    Route::get('/market', PlayerMarket::class)->name('market');
+    Route::post('/market/bid', [MarketController::class, 'placeBid'])->name('market.bid');
+    Route::post('/market/finalize', [MarketController::class, 'finalizeTransfer'])->name('market.finalize');
 });
 
 Route::get('/', Welcome::class)->name('welcome');

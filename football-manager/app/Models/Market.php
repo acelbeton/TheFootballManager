@@ -10,14 +10,19 @@ class Market extends Model
 {
     use HasFactory;
 
-    protected $table = 'markets';
+    protected $table = 'market_inputs';
+
     protected $fillable = [
         'player_id',
         'current_bid_amount',
         'user_id',
+        'bidding_end_date'
     ];
 
-    // TODO lehet nem ez kell
+    protected $casts = [
+        'bidding_end_date' => 'datetime',
+    ];
+
     public function player(): BelongsTo
     {
         return $this->belongsTo(Player::class);

@@ -1,0 +1,211 @@
+@use '../abstract/variables' as vars;
+
+.market-container {
+    margin-bottom: vars.$spacing-xl
+}
+
+.market-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: vars.$spacing-lg;
+
+    .market-title {
+        margin: 0;
+        font-weight: vars.$font-weight-semi-bold;
+    }
+
+    .market-balance {
+        background-color: vars.$color-background;
+        padding: vars.$spacing-sm vars.$spacing-md;
+        border-radius: vars.$spacing-md;
+        margin-bottom: vars.$spacing-lg;
+
+        .budget-amount {
+            font-weight: vars.$color-primary;
+            color: vars.$color-text;
+        }
+    }
+}
+
+.market-filters {
+    background-color: vars.$color-background;
+    padding: vars.$spacing-md;
+    border-radius: vars.$spacing-sm;
+    margin-bottom: vars.$spacing-lg;
+}
+
+.market-list {
+    background-color: vars.$color-section-background;
+    border-radius: vars.$spacing-sm;
+    box-shadow: vars.$shadow-md;
+    overflow: hidden;
+
+    table {
+        margin-bottom: 0;
+
+        th.sortable {
+            cursor: pointer;
+            position: relative;
+
+            &:hover {
+                background-color: rgba(0, 0, 0, 0.03);
+            }
+
+            i {
+                margin-left: vars.$spacing-xs;
+                font-size: vars.$font-size-sm;
+            }
+        }
+
+        .position-badge {
+            display: inline-block;
+            padding: vars.$spacing-xs vars.$spacing-sm;
+            border-radius: vars.$border-radius-lg;
+            font-size: vars.$font-size-sm;
+            font-weight: vars.$font-weight-semi-bold;
+
+            &.goalkeeper {
+                background-color: #FFC107;
+                color: #212529;
+            }
+
+            &.centre-back, &.fullback {
+                background-color: #28A745;
+                color: white;
+            }
+
+            &.midfielder {
+                background-color: #17A2B8;
+                color: white;
+            }
+
+            &.winger, &.striker {
+                background-color: #DC3545;
+                color: white;
+            }
+        }
+
+        .rating-stars {
+            display: flex;
+            align-items: center;
+
+            i {
+                display: flex;
+                margin-right: vars.$spacing-xs;
+            }
+
+            .rating-number {
+                margin-left: vars.$spacing-sm;
+                font-weight: vars.$font-weight-semi-bold;
+            }
+        }
+
+        .bid-count {
+            font-size: vars.$font-size-sm;
+            color: vars.$color-text;
+            margin-left: vars.$spacing-xs;
+        }
+
+        .no-bids {
+            color: vars.$color-text;
+            font-style: vars.$font-accent;
+        }
+
+        .time-left {
+            font-weight: vars.$font-weight-semi-bold;
+            &.ending-soon {
+                color: vars.$color-warning;
+            }
+        }
+    }
+}
+
+.pagination-container {
+    padding: vars.$spacing-md;
+    display: flex;
+    justify-content: center;
+}
+
+.player-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .position-icon {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: vars.$font-size-md;
+        font-weight: vars.$font-weight-bold;
+
+        &.goalkeeper {
+            background-color: #FFC107;
+            color: #212529;
+        }
+
+        &.centre-back, &.fullback {
+            background-color: #28A745;
+            color: white;
+        }
+
+        &.midfielder {
+            background-color: #17A2B8;
+            color: white;
+        }
+
+        &.winger, &.striker {
+            background-color: #DC3545;
+            color: white;
+        }
+    }
+}
+
+.market-info {
+    background-color: vars.$color-section-background;
+    padding: vars.$spacing-md;
+    border-radius: vars.$border-radius-md;
+
+    .info-label {
+        font-size: 0.875rem;
+        color: vars.$color-text;
+        margin-bottom: vars.$spacing-xs;
+    }
+
+    .info-value {
+        font-weight: vars.$font-weight-semi-bold;
+        font-size: 1.125rem;
+    }
+}
+
+.notification-toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: vars.$spacing-md vars.$spacing-lg;
+    border-radius: vars.$border-radius-md;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 9999;
+    max-width: 300px;
+
+    &.success {
+        background-color: vars.$color-highlight;
+        color: white;
+    }
+
+    &.error {
+        background-color: vars.$color-warning;
+        color: white;
+    }
+
+    &.info {
+        background-color: vars.$color-information;
+        color: white;
+    }
+}
