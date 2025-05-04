@@ -44,7 +44,7 @@
     left: 0.75rem;
     padding: 0 0.5rem;
     background-color: vars.$color-background;
-    font-size: 0.875rem;
+    font-size: vars.$font-size-label;
     color: vars.$color-text;
     transition: all 0.2s ease;
     pointer-events: none;

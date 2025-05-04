@@ -2,7 +2,6 @@
 
     <section class="hero">
         <div class="container">
-
             <button wire:navigate href="" class="button button-primary">Manage Team</button>
         </div>
     </section>

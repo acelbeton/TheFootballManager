@@ -14,7 +14,7 @@
                     <div class="d-flex align-items-center">
                         <div class="player-avatar">
                             <div class="position-icon {{ strtolower(str_replace('_', '-', $selectedPlayer->position)) }}">
-                                {{ substr(PlayerPosition::getName($selectedPlayer->position), 0, 2) }}
+                                {{ PlayerPosition::abbreviation($selectedPlayer->position) }}
                             </div>
                         </div>
                         <div class="ms-3">
@@ -40,10 +40,10 @@
                     </div>
                 </div>
 
-                <div class="form-group mb-3">
-                    <label for="bidAmount">Your Bid (€)</label>
-                    <input type="number" wire:model="bidAmount" id="bidAmount" class="form-control" min="1">
-                    @error('bidAmount') <span class="text-danger">{{ $message }}</span> @enderror
+                <div class="input-group">
+                    <input type="number" wire:model="bidAmount" id="bidAmount" class="input" min="1">
+                    <label for="bidAmount" class="input-label">Your Bid (€)</label>
+                    @error('bidAmount') <span class="text-danger mt-1">{{ $message }}</span> @enderror
                 </div>
             </div>
             <div class="modal-footer">

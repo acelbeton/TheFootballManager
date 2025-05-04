@@ -33,6 +33,94 @@
     padding: vars.$spacing-md;
     border-radius: vars.$spacing-sm;
     margin-bottom: vars.$spacing-lg;
+
+    //input {
+    //    width: 100%;
+    //}
+
+    .range-label {
+        position: absolute;
+        top: -0.75rem;
+        left: 0.75rem;
+        padding: 0 0.5rem;
+        background-color: vars.$color-background;
+        font-size: vars.$font-size-label;
+        color: vars.$color-text;
+        z-index: 1;
+    }
+
+    .range-container {
+        display: flex;
+        align-items: center;
+        background-color: vars.$color-background;
+        border: 1px solid vars.$color-border;
+        border-radius: vars.$border-radius-md;
+        padding: 0.75rem 1rem;
+
+        .form-range {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: vars.$border-radius-md;
+            outline: none;
+            flex: 1;
+
+            &::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: vars.$color-primary;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+                transition: all 0.2s ease;
+
+                &:hover {
+                    background: vars.$color-primary-hover;
+                    transform: scale(1.1);
+                }
+            }
+
+            &::-moz-range-thumb {
+                width: 16px;
+                height: 16px;
+                border-radius: 50%;
+                background: vars.$color-primary;
+                cursor: pointer;
+                border: 2px solid white;
+                box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+                transition: all 0.2s ease;
+
+                &:hover {
+                    background: vars.$color-primary-hover;
+                    transform: scale(1.1);
+                }
+            }
+
+            &::-webkit-slider-runnable-track {
+                height: 4px;
+                border-radius: 2px;
+            }
+
+            &::-moz-range-track {
+                height: 4px;
+                border-radius: 2px;
+            }
+        }
+
+        .range-values {
+            margin: 0 vars.$spacing-md;
+            font-size: vars.$font-size-label;
+            font-weight: vars.$font-weight-semi-bold;
+            color: vars.$color-text;
+            width: 60px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+    }
 }
 
 .market-list {
@@ -43,6 +131,29 @@
 
     table {
         margin-bottom: 0;
+        border-collapse: separate;
+        border-spacing: 0;
+
+        thead th {
+            background-color: vars.$color-section-background;
+            border-bottom: 2px solid vars.$color-border;
+            font-weight: vars.$font-weight-semi-bold;
+            padding: vars.$spacing-md;
+        }
+
+        tbody tr {
+            transition: all 0.2s ease;
+
+            &:hover {
+                background-color: rgba(vars.$color-primary, 0.05);
+            }
+        }
+
+        td {
+            padding: vars.$spacing-md;
+            border-bottom: 1px solid vars.$color-border;
+            vertical-align: middle;
+        }
 
         th.sortable {
             cursor: pointer;
@@ -113,9 +224,18 @@
         }
 
         .time-left {
-            font-weight: vars.$font-weight-semi-bold;
+            display: inline-block;
+            font-family: vars.$font-mono;
+            background-color: vars.$color-section-background;
+            padding: vars.$spacing-xs vars.$spacing-sm;
+            border-radius: vars.$border-radius-sm;
+            border: 1px solid vars.$color-border;
+            font-size: vars.$font-size-sm;
+
             &.ending-soon {
-                color: vars.$color-warning;
+                color: white;
+                background-color: vars.$color-warning;
+                border-color: vars.$color-warning;
             }
         }
     }
@@ -173,7 +293,7 @@
     border-radius: vars.$border-radius-md;
 
     .info-label {
-        font-size: 0.875rem;
+        font-size: vars.$font-size-label;
         color: vars.$color-text;
         margin-bottom: vars.$spacing-xs;
     }
@@ -182,6 +302,11 @@
         font-weight: vars.$font-weight-semi-bold;
         font-size: 1.125rem;
     }
+}
+
+#bidAmount {
+    font-weight: vars.$font-weight-semi-bold;
+    font-size: vars.$font-size-md;
 }
 
 .notification-toast {

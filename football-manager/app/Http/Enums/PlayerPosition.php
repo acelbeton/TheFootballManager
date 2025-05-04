@@ -22,4 +22,16 @@ enum PlayerPosition: string
             self::STRIKER->name => 'Striker',
         };
     }
+
+    public static function abbreviation($name): string
+    {
+        return match ($name) {
+            self::GOALKEEPER->name => 'GK',
+            self::CENTRE_BACK->name => 'CB',
+            self::FULLBACK->name => 'FB',
+            self::MIDFIELDER->name => 'MD',
+            self::WINGER->name => 'FW',
+            self::STRIKER->name => 'ST',
+        };
+    }
 }

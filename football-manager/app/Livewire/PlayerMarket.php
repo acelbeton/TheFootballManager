@@ -64,7 +64,7 @@ class PlayerMarket extends Component
             ->groupBy('player_id');
 
         $userTeam = Auth::user()->currentTeam;
-        $teamBudget = $userTeam ? $userTeam->budget : 0;
+        $teamBudget = $userTeam ? $userTeam->team_budget : 0;
 
         return view('livewire.market.player-market', [
             'players' => $players,

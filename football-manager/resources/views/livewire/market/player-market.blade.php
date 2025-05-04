@@ -12,30 +12,29 @@
 
     <div class="market-filters">
         <div class="row g-3">
-            <div class="col-md-4">
-                <div class="form-group">
-                    <label for="search">Search Player</label>
-                    <input type="text" wire:model.live="search" class="form-control" placeholder="Search by name...">
+            <div class="col-md-3">
+                <div class="input-group">
+                    <input type="text" wire:model.live="search" class="input" placeholder="Search by name...">
+                    <label for="search" class="input-label">Search Player</label>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="form-group">
-                    <label for="position">Position</label>
-                    <select wire:model.live="position" class="form-select">
-                        <option value="">All Positions</option>
-                        @foreach($positions as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </select>
+                    <x-custom-select
+                        label="Position"
+                        name="position"
+                        :options="$positions"
+                        wire:model.live="position"
+                    />
                 </div>
             </div>
-            <div class="col-md-5">
-                <div class="form-group">
-                    <label>Rating Range</label>
-                    <div class="d-flex align-items-center">
-                        <input type="range" wire:model.live="minRating" min="0" max="100" class="form-range flex-grow-1">
-                        <span class="px-2">{{ $minRating }} - {{ $maxRating }}</span>
-                        <input type="range" wire:model.live="maxRating" min="0" max="100" class="form-range flex-grow-1">
+            <div class="col-md-6">
+                <div class="range-input-group">
+                    <span class="range-label">Rating Range</span>
+                    <div class="range-container">
+                        <input type="range" wire:model.live="minRating" min="0" max="100" class="form-range">
+                        <span class="range-values">{{ $minRating }} - {{ $maxRating }}</span>
+                        <input type="range" wire:model.live="maxRating" min="0" max="100" class="form-range">
                     </div>
                 </div>
             </div>
@@ -140,7 +139,7 @@
                             </td>
                             <td>
                                 {{-- TODO button size --}}
-                                <button class="button button-primary" wire:click="selectPlayer({{ $player->getKey() }})">
+                                <button class="button button-primary button-small" wire:click="selectPlayer({{ $player->getKey() }})">
                                     Place Bid
                                 </button>
                             </td>
