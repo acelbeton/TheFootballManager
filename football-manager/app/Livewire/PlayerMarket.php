@@ -8,9 +8,11 @@ use App\Models\Market;
 use App\Models\Player;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Title('Market')]
 class PlayerMarket extends Component
 {
     use WithPagination;

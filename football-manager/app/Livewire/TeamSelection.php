@@ -4,8 +4,10 @@ namespace App\Livewire;
 
 use App\Models\Team;
 use Auth;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Title('Select Team')]
 class TeamSelection extends Component
 {
     public $teams;

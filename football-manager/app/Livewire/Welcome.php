@@ -2,8 +2,10 @@
 
 namespace App\Livewire;
 
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Title('Football Manager')]
 class Welcome extends Component
 {
     public function render()

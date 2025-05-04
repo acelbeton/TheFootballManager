@@ -8,9 +8,11 @@ use App\Models\TrainingSession;
 use App\PlayerStatistics;
 use App\Services\TrainingService;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 use Livewire\Livewire;
 
+#[Title('Training')]
 class TrainingDashboard extends Component
 {
     public $selectedPlayers = [];
