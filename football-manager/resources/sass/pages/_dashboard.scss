@@ -1,0 +1,426 @@
+@use '../abstract/variables' as vars;
+
+.dashboard-container {
+    margin-bottom: vars.$spacing-xl;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: vars.$spacing-lg;
+
+    h1 {
+        margin: 0;
+        font-weight: vars.$font-weight-semi-bold;
+    }
+
+    .team-meta {
+        display: flex;
+        gap: vars.$spacing-md;
+
+        .team-budget, .team-rating, .team-tactic {
+            background-color: vars.$color-background;
+            padding: vars.$spacing-sm vars.$spacing-md;
+            border-radius: vars.$border-radius-md;
+
+            .label {
+                font-size: vars.$font-size-sm;
+                color: vars.$color-text;
+                margin-right: vars.$spacing-xs;
+            }
+
+            .value {
+                font-weight: vars.$font-weight-semi-bold;
+            }
+        }
+
+        .team-budget .value {
+            color: vars.$color-primary;
+        }
+    }
+}
+
+.dashboard-stats-summary {
+    background-color: vars.$color-background;
+    border-radius: vars.$border-radius-md;
+    margin-bottom: vars.$spacing-lg;
+    padding: vars.$spacing-md;
+    display: flex;
+    align-items: center;
+    box-shadow: vars.$shadow-sm;
+
+    .position-badge {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-right: vars.$spacing-md;
+
+        .position-number {
+            font-size: 1.5rem;
+            font-weight: vars.$font-weight-bold;
+        }
+
+        .position-label {
+            font-size: vars.$font-size-sm;
+        }
+
+        &.position-1 {
+            background-color: vars.$color-premium;
+            color: #212529;
+        }
+
+        &.position-2 {
+            background-color: #C0C0C0;
+            color: #212529;
+        }
+
+        &.position-3 {
+            background-color: #CD7F32;
+            color: white;
+        }
+
+        &.position-4, &.position-5, &.position-6 {
+            background-color: vars.$color-primary;
+            color: white;
+        }
+
+        &.position-7, &.position-8, &.position-9, &.position-10 {
+            background-color: vars.$color-information;
+            color: white;
+        }
+
+        &.position-11, &.position-12, &.position-13, &.position-14 {
+            background-color: vars.$color-background;
+            color: vars.$color-text;
+            border: 1px solid vars.$color-border;
+        }
+
+        &.position-15, &.position-16, &.position-17, &.position-18 {
+            background-color: rgba(vars.$color-warning, 0.2);
+            color: vars.$color-warning;
+        }
+    }
+
+    .stats-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: vars.$spacing-sm;
+
+        .stat-pill {
+            background-color: vars.$color-section-background;
+            border-radius: vars.$border-radius-lg;
+            padding: vars.$spacing-xs vars.$spacing-sm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 80px;
+
+            .label {
+                font-size: vars.$font-size-stat;
+                color: vars.$color-text;
+            }
+
+            .value {
+                font-weight: vars.$font-weight-semi-bold;
+                font-size: vars.$font-size-label;
+            }
+
+            &.stat-pill-highlight {
+                background-color: vars.$color-primary;
+
+                .label, .value {
+                    color: white;
+                }
+            }
+        }
+    }
+}
+
+.action-cards {
+    margin-bottom: vars.$spacing-lg;
+
+    .card-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .action-card {
+        height: 100%;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+        &.hover {
+            transform: translateY(-5px);
+            box-shadow: vars.$shadow-lg;
+        }
+
+        .card-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            color: vars.$color-primary;
+            margin: vars.$spacing-sm 0;
+        }
+
+        .card-quick-stats {
+            display: flex;
+            gap: vars.$spacing-md;
+            margin-top: vars.$spacing-sm;
+
+            .quick-stat {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+
+                .label {
+                    font-size: vars.$font-size-stat;
+                    color: vars.$color-text;
+                }
+
+                .value {
+                    font-weight: vars.$font-weight-semi-bold;
+                }
+            }
+        }
+    }
+}
+
+.match-list {
+    .match-item {
+        border-bottom: 1px solid vars.$color-section-background;
+        padding: vars.$spacing-sm 0;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .match-date {
+            font-size: vars.$font-size-sm;
+            color: vars.$color-text;
+            margin-bottom: vars.$spacing-xs;
+        }
+
+        .match-teams {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            .team {
+                font-weight: vars.$font-weight-semi-bold;
+                flex: 1;
+
+                &.your-team {
+                    color: vars.$color-primary;
+                }
+            }
+
+            .home-team {
+                text-align: right;
+            }
+
+            .away-team {
+                text-align: left;
+            }
+
+            .match-versus {
+                padding: 0 vars.$spacing-sm;
+                color: vars.$color-text;
+                font-size: vars.$font-size-sm;
+            }
+        }
+    }
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: vars.$font-size-sm;
+    margin-top: vars.$spacing-md;
+
+    th {
+        text-align: center;
+        padding: vars.$spacing-xs vars.$spacing-xs;
+        background-color: vars.$color-section-background;
+        font-weight: vars.$font-weight-semi-bold;
+
+        &:first-child {
+            text-align: center;
+            width: 30px;
+        }
+
+        &:nth-child(2) {
+            text-align: left;
+        }
+    }
+
+    td {
+        padding: vars.$spacing-xs vars.$spacing-xs;
+        text-align: center;
+        border-bottom: 1px solid vars.$color-section-background;
+
+        &:nth-child(2) {
+            text-align: left;
+        }
+    }
+
+    .points-cell {
+        font-weight: vars.$font-weight-semi-bold;
+    }
+
+    .your-team-row {
+        background-color: rgba(vars.$color-primary, 0.1);
+        font-weight: vars.$font-weight-semi-bold;
+    }
+}
+
+.league-info {
+    margin-bottom: vars.$spacing-sm;
+
+    .league-name {
+        font-weight: vars.$font-weight-semi-bold;
+        font-size: vars.$font-size-md;
+    }
+
+    .season-dates {
+        font-size: vars.$font-size-sm;
+        color: vars.$color-text;
+    }
+}
+
+.position-distribution {
+    h4 {
+        font-size: vars.$font-size-label;
+        margin-bottom: vars.$spacing-sm;
+    }
+
+    .position-bars {
+        .position-bar-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: vars.$spacing-xs;
+
+            .position-name {
+                width: 120px;
+                font-size: vars.$font-size-sm;
+            }
+
+            .position-bar-container {
+                flex-grow: 1;
+                background-color: vars.$color-section-background;
+                height: 24px;
+                border-radius: vars.$border-radius-sm;
+                overflow: hidden;
+            }
+
+            .position-bar {
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: flex-end;
+                padding-right: vars.$spacing-sm;
+
+                .position-count {
+                    color: white;
+                    font-size: vars.$font-size-sm;
+                    font-weight: vars.$font-weight-semi-bold;
+                }
+
+                &.position-goalkeeper {
+                    background-color: #FFC107;
+                }
+
+                &.position-centre-back, &.position-fullback {
+                    background-color: #28A745;
+                }
+
+                &.position-midfielder {
+                    background-color: #17A2B8;
+                }
+
+                &.position-winger, &.position-striker {
+                    background-color: #DC3545;
+                }
+            }
+        }
+    }
+}
+
+.squad-summary {
+    display: flex;
+    flex-direction: column;
+    gap: vars.$spacing-sm;
+
+    .summary-stat {
+        display: flex;
+        justify-content: space-between;
+        padding: vars.$spacing-sm;
+        background-color: vars.$color-section-background;
+        border-radius: vars.$border-radius-sm;
+
+        .label {
+            font-weight: vars.$font-weight-normal;
+        }
+
+        .value {
+            font-weight: vars.$font-weight-semi-bold;
+        }
+    }
+}
+
+.view-all-link {
+    display: inline-block;
+    padding: vars.$spacing-xs vars.$spacing-sm;
+    color: vars.$color-primary;
+    text-decoration: none;
+    font-size: vars.$font-size-sm;
+    font-weight: vars.$font-weight-semi-bold;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.no-data-message {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: vars.$spacing-lg;
+    color: vars.$color-text;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+
+        .team-meta {
+            margin-top: vars.$spacing-sm;
+            flex-wrap: wrap;
+        }
+    }
+
+    .dashboard-stats-summary {
+        flex-direction: column;
+
+        .position-badge {
+            margin-right: 0;
+            margin-bottom: vars.$spacing-sm;
+        }
+    }
+
+    .squad-summary, .position-distribution {
+        margin-bottom: vars.$spacing-md;
+    }
+}
