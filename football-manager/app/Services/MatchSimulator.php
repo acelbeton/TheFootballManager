@@ -8,6 +8,11 @@ use App\Models\Team;
 
 class MatchSimulator
 {
+    protected $match;
+    protected $homeTeam;
+    protected $awayTeam;
+    protected $awayPLayers;
+
     public function simulate(MatchModel $match)
     {
         $homeTeam = Team::with('players')->findOrFail($match->home_team_id);

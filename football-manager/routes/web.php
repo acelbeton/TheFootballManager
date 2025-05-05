@@ -8,6 +8,7 @@ use App\Livewire\PlayerMarket;
 use App\Livewire\Players;
 use App\Livewire\RegistrationForm;
 use App\Livewire\Team\CreateTeam;
+use App\Livewire\TeamManagement;
 use App\Livewire\Teams;
 use App\Livewire\TeamSelection;
 use App\Livewire\TrainingDashboard;
@@ -37,6 +38,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/market', PlayerMarket::class)->name('market');
     Route::post('/market/bid', [MarketController::class, 'placeBid'])->name('market.bid');
     Route::post('/market/finalize', [MarketController::class, 'finalizeTransfer'])->name('market.finalize');
+
+    Route::get('/team-management', TeamManagement::class)->name('team-management');
 });
 
 Route::get('/', Welcome::class)->name('welcome');

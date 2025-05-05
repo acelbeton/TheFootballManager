@@ -50,6 +50,7 @@
   * Oldal elkészítése
   * Kitalálni hogyan működjön: felhasználó csinálhat aukciót vagy csak a rendszer készít
   * Websocket bevezetése, hogy elő legyen a piac
+  * UPDATE: Javarészt készen van, még az nincs kész, hogyan lehet létrehozni egy aukciót + Ronda a design
 
 ##
 - [ ] Meccs rendszer létrehozása

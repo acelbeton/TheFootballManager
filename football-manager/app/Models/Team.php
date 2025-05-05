@@ -52,6 +52,11 @@ class Team extends Model
         return $this->hasMany(TrainingSession::class);
     }
 
+    public function teamLineup(): HasMany
+    {
+        return $this->hasMany(TeamLineup::class);
+    }
+
     // Ez lehet, hogy nem kell, mivel most fillable a team_rating
 //    public function getTeamRatingAttribute(): int
 //    {

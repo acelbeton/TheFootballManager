@@ -62,4 +62,9 @@ class Player extends Model
     {
         return $this->belongsTo(Team::class);
     }
+
+    public function lineupPlayer(): HasMany
+    {
+        return $this->hasMany(LineupPlayer::class);
+    }
 }
