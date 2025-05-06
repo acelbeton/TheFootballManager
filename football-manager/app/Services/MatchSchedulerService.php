@@ -8,11 +8,12 @@ use App\Models\Team;
 use Carbon\Carbon;
 use DB;
 use Exception;
+use Throwable;
 
 class MatchSchedulerService
 {
     /**
-     * @throws Exception
+     * @throws Exception|Throwable
      */
     public function generateFixturesForSeason(Season $season): array
     {
