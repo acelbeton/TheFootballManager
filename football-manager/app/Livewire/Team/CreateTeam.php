@@ -10,41 +10,50 @@ use App\Models\Player;
 use App\Models\Season;
 use App\Models\Statistic;
 use App\Models\Team;
+use App\Services\LeagueManagerService;
 use Auth;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 
-// a teamcreation a regisztráció után jön
-// ezen kívűl a team management komponens része lesz
-// egy csapat egy ligában van, de egy játékosnak lehet maximum 3 csapata
 class CreateTeam extends Component
 {
-
     #[Validate('required|string|max:255|unique:teams,name')]
     public $name;
-//    #[Rule('required|exists:leagues,id')]
-//    public $league;
+
     public $leagues;
 
     #[Validate('required|exists:leagues,id')]
     public $selectedLeagueId;
+
+    protected $leagueManager;
+
+    public function boot(LeagueManagerService $leagueManager)
+    {
+        $this->leagueManager = $leagueManager;
+    }
+
     public function createTeam()
     {
         $this->validate();
 
         $league = $this->leagues->find($this->selectedLeagueId);
+
         $season = Season::where('league_id', $league->getKey())
-            ->firstOrCreate([
+            ->where('open', true)
+            ->first();
+
+        if (!$season) {
+            $season = Season::create([
                 'league_id' => $league->getKey(),
                 'start_date' => now(),
                 'open' => true,
-                'end_date' => now()->addWeeks(4),
+                'end_date' => now()->addWeeks(8),
                 'prize_money_first' => PrizeMoney::PRIZE_MONEY_FIRST,
                 'prize_money_second' => PrizeMoney::PRIZE_MONEY_SECOND,
                 'prize_money_third' => PrizeMoney::PRIZE_MONEY_THIRD,
                 'prize_money_other' => PrizeMoney::PRIZE_MONEY_OTHER,
-
             ]);
+        }
 
         $team = Team::create([
             'name' => $this->name,
@@ -55,6 +64,8 @@ class CreateTeam extends Component
         Auth::user()->update(['current_team_id' => $team->getKey()]);
 
         $this->assignRandomPlayers($team);
+
+        $this->leagueManager->setupLeague($league);
 
         $this->redirect(route('dashboard'), navigate: true);
     }
@@ -95,6 +106,7 @@ class CreateTeam extends Component
     {
         $this->leagues = League::all();
     }
+
     public function render()
     {
         if (Auth::user()->teams()->count() > 3) {

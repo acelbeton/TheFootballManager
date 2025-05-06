@@ -72,6 +72,13 @@ return [
             'after_commit' => false,
         ],
 
+        'match-simulation' => [
+            'driver' => 'redis',
+            'connection' => 'default',
+            'queue' => 'match-simulation',
+            'retry_after' => 300,
+            'block_for' => null,
+        ],
     ],
 
     /*
