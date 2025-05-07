@@ -28,8 +28,10 @@ class MatchSchedulerService
         $teamIds = $teams->pluck('id')->toArray();
 
         $roundCount = ($teamCount - 1) * 2;
+        $startDate = Carbon::parse($season->start_date);
+        $endDate = Carbon::parse($season->end_date);
 
-        $matchDates = $this->calculateMatchDates($season->start_date, $season->end_date, $roundCount);
+        $matchDates = $this->calculateMatchDates($startDate, $endDate, $roundCount);
 
         DB::transaction(function() use ($teamIds, $teamCount, $roundCount, $matchDates, &$fixtures) {
             $firstHalfFixtures = $this->generateRoundRobinFixtures($teamIds);

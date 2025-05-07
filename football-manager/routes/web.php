@@ -4,6 +4,7 @@ use App\Http\Controllers\MarketController;
 use App\Livewire\Auth\Logout;
 use App\Livewire\Dashboard;
 use App\Livewire\LoginForm;
+use App\Livewire\MatchViewer;
 use App\Livewire\PlayerMarket;
 use App\Livewire\Players;
 use App\Livewire\RegistrationForm;
@@ -19,6 +20,8 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', RegistrationForm::class)->name('register');
     Route::get('/login', LoginForm::class)->name('login');
 });
+
+Broadcast::routes(['middleware' => ['auth']]);
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
@@ -40,6 +43,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/market/finalize', [MarketController::class, 'finalizeTransfer'])->name('market.finalize');
 
     Route::get('/team-management', TeamManagement::class)->name('team-management');
+
+    Route::get('/matches/{matchId}', MatchViewer::class)->name('match.view');
 });
 
 Route::get('/', Welcome::class)->name('welcome');

@@ -3,13 +3,13 @@
 namespace App\Services;
 
 use App\Jobs\SimulateMatchJob;
-use App\Models\GameMatch;
 use App\Models\MatchModel;
 use App\Models\MatchSimulationStatus;
 use App\Models\Team;
 use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
+use Log;
 
 class RealtimeMatchSimulationService
 {
@@ -23,7 +23,7 @@ class RealtimeMatchSimulationService
         }
 
         $existingStatus = MatchSimulationStatus::where('match_id', $match->getKey())
-            ->whereIn('status', ['queued', 'in_progress'])
+            ->whereIn('status', ['QUEUED', 'IN_PROGRESS'])
             ->first();
 
         if ($existingStatus) {
@@ -31,7 +31,7 @@ class RealtimeMatchSimulationService
                 'match_id' => $match->getKey(),
                 'status' => $existingStatus->status,
                 'message' => 'Match simulation is already ' .
-                    ($existingStatus->status === 'queued' ? 'queued' : 'in progress') . '.'
+                    ($existingStatus->status === 'QUEUED' ? 'queued' : 'in progress') . '.'
             ];
         }
 
@@ -39,7 +39,7 @@ class RealtimeMatchSimulationService
 
         MatchSimulationStatus::create([
             'match_id' => $match->getKey(),
-            'status' => 'queued',
+            'status' => 'QUEUED',
             'job_id' => $jobId,
             'current_minute' => 0
         ]);
@@ -75,10 +75,10 @@ class RealtimeMatchSimulationService
         ];
     }
 
-    private function getMatchStatus(MatchModel $match): string
+    public function getMatchStatus(MatchModel $match): string
     {
         if ($match->home_team_score > 0 || $match->away_team_score > 0) {
-            return 'completed';
+            return 'COMPLETED';
         }
 
         $simulationStatus = MatchSimulationStatus::where('match_id', $match->getKey())
@@ -100,7 +100,7 @@ class RealtimeMatchSimulationService
     private function getCurrentMatchMinute(MatchModel $match): int
     {
         $simulationStatus = MatchSimulationStatus::where('match_id', $match->getKey())
-            ->where('status', 'in_progress')
+            ->where('status', 'IN_PROGRESS')
             ->first();
 
         return $simulationStatus ? $simulationStatus->current_minute : 0;
@@ -118,5 +118,7 @@ class RealtimeMatchSimulationService
                 'current_minute' => $currentMinute
             ]);
         }
+
+        Log::info("Match {$match->getKey()} status updated to {$status} at minute {$currentMinute}");
     }
 }

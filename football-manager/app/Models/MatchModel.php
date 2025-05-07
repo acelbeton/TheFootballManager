@@ -21,6 +21,10 @@ class MatchModel extends Model
         'match_date'
     ];
 
+    protected $casts = [
+        'match_date' => 'datetime',
+    ];
+
     public function homeTeam(): BelongsTo
     {
         return $this->belongsTo(Team::class, 'home_team_id');
@@ -34,5 +38,10 @@ class MatchModel extends Model
     public function teamLineup(): HasMany
     {
         return $this->hasMany(TeamLineup::class);
+    }
+
+    public function playerPerformances(): HasMany
+    {
+        return $this->hasMany(PlayerPerformance::class, 'match_id');
     }
 }

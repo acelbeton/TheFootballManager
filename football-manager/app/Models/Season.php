@@ -27,6 +27,11 @@ class Season extends Model
         'prize_money_other',
     ];
 
+    protected $casts = [
+        'start_date' => 'datetime',
+        'end_date' => 'datetime',
+    ];
+
     public function league(): BelongsTo
     {
         return $this->belongsTo(League::class);

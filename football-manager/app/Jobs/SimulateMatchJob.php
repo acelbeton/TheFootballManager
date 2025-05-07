@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Events\MatchStatusUpdate;
 use App\Models\MatchModel;
+use App\Models\MatchSimulationStatus;
 use App\Models\Player;
 use App\Models\PlayerPerformance;
 use App\Models\Standing;
@@ -62,35 +63,75 @@ class SimulateMatchJob implements ShouldQueue
     protected $matchEvents = [];
     protected $playerFatigue = [];
     protected $matchId;
-    protected $jobId;
 
     /**
      * Create a new job instance.
      */
-    public function __construct(int $matchId, int $jobId)
+    public function __construct(int $matchId)
     {
         $this->matchId = $matchId;
-        $this->jobId = $jobId;
     }
 
     /**
      * Execute the job.
+     * @throws Exception
      */
     public function handle(RealtimeMatchSimulationService $simulationService): void
     {
-        $this->match = MatchModel::findOrFail($this->matchId);
+        try {
+            $this->match = MatchModel::findOrFail($this->matchId);
 
-        $simulationService->updateMatchStatus($this->match, 'IN_PROGRESS', 0);
+            $simulationStatus = MatchSimulationStatus::where('match_id', $this->matchId)
+                ->orderBy('created_at', 'desc')
+                ->first();
 
-        $this->initializeSimulation();
+            $startMinute = ($simulationStatus && $simulationStatus->current_minute > 0)
+                ? $simulationStatus->current_minute
+                : 0;
 
-        $this->broadcastMatchUpdate('MATCH_START', null,
-            "The match between {$this->homeTeam->name} and {$this->awayTeam->name} is about to begin!"
-        );
+            if ($startMinute == 0) {
+                $simulationService->updateMatchStatus($this->match, 'IN_PROGRESS', 0);
+                $this->initializeSimulation();
+                $this->broadcastMatchUpdate('MATCH_START', null,
+                    "The match between {$this->homeTeam->name} and {$this->awayTeam->name} is about to begin!");
+            } else {
+                $this->initializeSimulation();
+                $this->currentMinute = $startMinute;
+            }
 
-        $this->runSimulation($simulationService);
+            $endMinute = min(90, $startMinute + 5);
 
-        $this->endMatch($simulationService);
+            while ($this->currentMinute < $endMinute) {
+                $this->simulateMinute();
+                $this->currentMinute++;
+                $simulationService->updateMatchStatus($this->match, 'IN_PROGRESS', $this->currentMinute);
+                $this->broadcastMatchUpdate('TIME_UPDATE', null, null);
+
+                if ($this->currentMinute == 45) {
+                    $this->broadcastMatchUpdate('HALF_TIME', null,
+                        "Half time! The score is {$this->homeTeam->name} {$this->homeScore} - {$this->awayScore} {$this->awayTeam->name}");
+                    $this->halftimeAdjustments();
+                }
+
+//                sleep(self::MATCH_SPEED);
+            }
+
+            if ($this->currentMinute < 90) {
+                SimulateMatchJob::dispatch($this->matchId)
+                    ->onQueue('match-simulation')
+                    ->delay(now()->addSeconds(5));
+            } else {
+                $this->endMatch($simulationService);
+            }
+        } catch (Exception $e) {
+            Log::error("Error in match simulation: " . $e->getMessage(), [
+                'match_id' => $this->matchId,
+                'current_minute' => $this->currentMinute ?? 0,
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            throw $e;
+        }
     }
 
     private function initializeSimulation(): void
@@ -99,7 +140,6 @@ class SimulateMatchJob implements ShouldQueue
         $this->awayTeam = Team::findOrFail($this->match->away_team_id);
 
         $this->loadPlayerStats();
-
         $this->initializeFatigue();
 
         $this->currentMinute = 0;
@@ -113,33 +153,6 @@ class SimulateMatchJob implements ShouldQueue
         $this->homeShotsOnTarget = 0;
         $this->awayShotsOnTarget = 0;
         $this->matchEvents = [];
-    }
-
-    private function runSimulation(RealtimeMatchSimulationService $simulationService): void
-    {
-        while ($this->currentMinute <= 90) {
-            if ($this->currentMinute >= 45) {
-                $this->updatePlayerFatigue();
-            }
-
-            $this->simulateMinute();
-
-            $this->currentMinute++;
-
-            $simulationService->updateMatchStatus($this->match, 'IN_PROGRESS', $this->currentMinute);
-
-            $this->broadcastMatchUpdate('TIME_UPDATE', null, null);
-
-            if ($this->currentMinute == 45) {
-                $this->broadcastMatchUpdate('HALF_TIME', null,
-                    "Half time! The score is {$this->homeTeam->name} {$this->homeScore} - {$this->awayScore} {$this->awayTeam->name}"
-                );
-
-                $this->halftimeAdjustments();
-            }
-
-            sleep(self::MATCH_SPEED);
-        }
     }
 
     private function loadPlayerStats(): void
@@ -158,6 +171,7 @@ class SimulateMatchJob implements ShouldQueue
             $stats = $player->statistics;
             if ($stats) {
                 $this->homePlayerStats[$player->getKey()] = [
+                    'id' => $player->getKey(),
                     'attacking' => $stats->attacking,
                     'defending' => $stats->defending,
                     'stamina' => $stats->stamina,
@@ -174,6 +188,7 @@ class SimulateMatchJob implements ShouldQueue
             $stats = $player->statistics;
             if ($stats) {
                 $this->awayPlayerStats[$player->getKey()] = [
+                    'id' => $player->getKey(),
                     'attacking' => $stats->attacking,
                     'defending' => $stats->defending,
                     'stamina' => $stats->stamina,
@@ -246,30 +261,6 @@ class SimulateMatchJob implements ShouldQueue
 
         $this->homePossession = max(30, min(70, $this->homePossession));
         $this->awayPossession = 100 - $this->homePossession;
-    }
-
-    private function simulateMatchLoop(): void // should be a background process
-    {
-        while ($this->currentMinute <= 90 && $this->isSimulating) {
-            if ($this->currentMinute >= self::FATIGUE_START) {
-                $this->updatePlayerFatigue();
-            }
-
-            $this->simulateMinute();
-
-            $this->currentMinute++;
-
-            $this->broadcastMatchUpdate('TIME_UPDATE', null, null);
-
-
-            if ($this->currentMinute == 45) {
-                $this->broadcastMatchUpdate('HALF_TIME', null, "Half time! The score is {$this->homeTeam->name} {$this->homeScore} - {$this->awayScore} {$this->awayTeam->name}");
-
-                $this->halftimeAdjustments();
-            }
-        }
-
-        $this->endMatch();
     }
 
     private function updatePlayerFatigue()

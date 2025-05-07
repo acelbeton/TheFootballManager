@@ -1,0 +1,368 @@
+@use '../abstract/variables' as vars;
+
+.match-viewer-container {
+    margin-bottom: vars.$spacing-xl;
+}
+
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: vars.$spacing-md;
+
+    .match-date {
+        display: flex;
+        flex-direction: column;
+
+        .date-label {
+            font-weight: vars.$font-weight-semi-bold;
+            font-size: vars.$font-size-md;
+        }
+
+        .time-label {
+            color: vars.$color-text;
+            font-size: vars.$font-size-sm;
+        }
+    }
+
+    .match-status {
+        display: flex;
+        align-items: center;
+
+        .live-indicator {
+            background-color: vars.$color-warning;
+            color: white;
+            padding: vars.$spacing-xs vars.$spacing-sm;
+            border-radius: vars.$border-radius-sm;
+            font-weight: vars.$font-weight-bold;
+            margin-right: vars.$spacing-sm;
+            animation: pulse 1.5s infinite;
+        }
+
+        .minute-counter {
+            font-weight: vars.$font-weight-semi-bold;
+            font-size: vars.$font-size-md;
+        }
+
+        .finished-indicator {
+            background-color: vars.$color-information;
+            color: white;
+            padding: vars.$spacing-xs vars.$spacing-sm;
+            border-radius: vars.$border-radius-sm;
+            font-weight: vars.$font-weight-bold;
+        }
+
+        .upcoming-indicator {
+            background-color: vars.$color-primary;
+            color: white;
+            padding: vars.$spacing-xs vars.$spacing-sm;
+            border-radius: vars.$border-radius-sm;
+            font-weight: vars.$font-weight-bold;
+        }
+    }
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.match-scoreboard {
+    display: flex;
+    align-items: center;
+    background-color: vars.$color-background;
+    padding: vars.$spacing-md;
+    border-radius: vars.$border-radius-md;
+    box-shadow: vars.$shadow-md;
+    margin-bottom: vars.$spacing-lg;
+
+    .team {
+        flex: 1;
+
+        &.home-team {
+            text-align: right;
+            padding-right: vars.$spacing-md;
+        }
+
+        &.away-team {
+            text-align: left;
+            padding-left: vars.$spacing-md;
+        }
+
+        &.user-team {
+            .team-name {
+                color: vars.$color-primary;
+                font-weight: vars.$font-weight-bold;
+            }
+        }
+
+        .team-name {
+            font-size: 1.5rem;
+            font-weight: vars.$font-weight-semi-bold;
+            margin-bottom: vars.$spacing-xs;
+        }
+
+        .team-tactic {
+            font-size: vars.$font-size-sm;
+            color: vars.$color-text;
+            text-transform: capitalize;
+        }
+    }
+
+    .match-score {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0 vars.$spacing-lg;
+
+        .score-display {
+            font-size: 2.5rem;
+            font-weight: vars.$font-weight-bold;
+            margin-bottom: vars.$spacing-sm;
+
+            .score-separator {
+                margin: 0 vars.$spacing-xs;
+                color: vars.$color-text;
+            }
+        }
+
+        button {
+            padding: vars.$spacing-xs vars.$spacing-md;
+        }
+    }
+}
+
+.match-content {
+    .match-commentary-container {
+        background-color: vars.$color-background;
+        border-radius: vars.$border-radius-md;
+        box-shadow: vars.$shadow-md;
+        overflow: hidden;
+        margin-bottom: vars.$spacing-lg;
+
+        .commentary-title {
+            padding: vars.$spacing-md;
+            margin: 0;
+            border-bottom: 1px solid vars.$color-section-background;
+            font-size: vars.$font-size-md;
+            font-weight: vars.$font-weight-semi-bold;
+        }
+
+        .commentary-feed {
+            height: 500px;
+            overflow-y: auto;
+            padding: vars.$spacing-sm;
+
+            .commentary-item {
+                display: flex;
+                align-items: flex-start;
+                margin-bottom: vars.$spacing-md;
+                padding: vars.$spacing-sm;
+                border-radius: vars.$border-radius-sm;
+                background-color: vars.$color-section-background;
+
+                &.GOAL {
+                    background-color: rgba(vars.$color-primary, 0.1);
+                    border-left: 3px solid vars.$color-primary;
+                }
+
+                &.YELLOW_CARD {
+                    background-color: rgba(vars.$color-premium, 0.1);
+                    border-left: 3px solid vars.$color-premium;
+                }
+
+                &.RED_CARD {
+                    background-color: rgba(vars.$color-warning, 0.1);
+                    border-left: 3px solid vars.$color-warning;
+                }
+
+                &.home-team {
+                    margin-right: 20%;
+                }
+
+                &.away-team {
+                    margin-left: 20%;
+                }
+
+                .event-minute {
+                    min-width: 30px;
+                    font-weight: vars.$font-weight-bold;
+                    color: vars.$color-text;
+                }
+
+                .event-icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 24px;
+                    height: 24px;
+                    margin: 0 vars.$spacing-sm;
+
+                    i {
+                        font-size: vars.$font-size-md;
+                        color: vars.$color-primary;
+                    }
+
+                    .card {
+                        width: 14px;
+                        height: 20px;
+                        border-radius: 2px;
+
+                        &.yellow-card {
+                            background-color: vars.$color-premium;
+                        }
+
+                        &.red-card {
+                            background-color: vars.$color-warning;
+                        }
+                    }
+                }
+
+                .event-content {
+                    flex: 1;
+
+                    .event-text {
+                        margin-bottom: vars.$spacing-xs;
+                    }
+
+                    .goal-scorer {
+                        font-size: vars.$font-size-sm;
+
+                        .assist-label {
+                            font-style: italic;
+                            color: vars.$color-text;
+                        }
+                    }
+
+                    .goal-score {
+                        font-size: vars.$font-size-sm;
+                        font-weight: vars.$font-weight-semi-bold;
+                        color: vars.$color-primary;
+                        margin-top: vars.$spacing-xs;
+                    }
+                }
+            }
+
+            .no-events-message {
+                padding: vars.$spacing-lg;
+                text-align: center;
+                color: vars.$color-text;
+                font-style: italic;
+            }
+        }
+    }
+
+    .match-stats-container {
+        background-color: vars.$color-background;
+        border-radius: vars.$border-radius-md;
+        box-shadow: vars.$shadow-md;
+        overflow: hidden;
+
+        .stats-title {
+            padding: vars.$spacing-md;
+            margin: 0;
+            border-bottom: 1px solid vars.$color-section-background;
+            font-size: vars.$font-size-md;
+            font-weight: vars.$font-weight-semi-bold;
+        }
+
+        .stat-item {
+            padding: vars.$spacing-md;
+            border-bottom: 1px solid vars.$color-section-background;
+
+            .stat-label {
+                font-size: vars.$font-size-sm;
+                margin-bottom: vars.$spacing-xs;
+                color: vars.$color-text;
+            }
+
+            .stat-bars {
+                .stat-bar-container {
+                    height: 20px;
+                    background-color: vars.$color-section-background;
+                    margin-bottom: vars.$spacing-xs;
+                    border-radius: vars.$border-radius-sm;
+                    position: relative;
+
+                    .stat-bar {
+                        height: 100%;
+                        border-radius: vars.$border-radius-sm;
+
+                        &.home-bar {
+                            background-color: vars.$color-primary;
+                        }
+
+                        &.away-bar {
+                            background-color: vars.$color-highlight;
+                        }
+                    }
+
+                    .stat-value {
+                        position: absolute;
+                        top: 0;
+                        line-height: 20px;
+                        font-size: vars.$font-size-sm;
+                        font-weight: vars.$font-weight-semi-bold;
+
+                        &.home-value {
+                            right: vars.$spacing-sm;
+                            color: white;
+                        }
+
+                        &.away-value {
+                            left: vars.$spacing-sm;
+                            color: white;
+                        }
+                    }
+                }
+            }
+
+            .stat-values {
+                display: flex;
+                justify-content: space-between;
+                font-weight: vars.$font-weight-semi-bold;
+
+                .home-value, .away-value {
+                    font-size: vars.$font-size-md;
+                }
+            }
+        }
+
+        .teams-container {
+            padding: vars.$spacing-md;
+
+            h4 {
+                font-size: vars.$font-size-md;
+                margin-bottom: vars.$spacing-sm;
+                font-weight: vars.$font-weight-semi-bold;
+            }
+        }
+    }
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    .match-scoreboard {
+        flex-direction: column;
+
+        .team {
+            text-align: center;
+            margin-bottom: vars.$spacing-sm;
+
+            &.home-team, &.away-team {
+                padding: 0;
+            }
+        }
+
+        .match-score {
+            margin: vars.$spacing-sm 0;
+        }
+    }
+}

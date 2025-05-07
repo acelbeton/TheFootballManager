@@ -133,7 +133,7 @@ class AITeamGeneratorService
 
     private function getRandomTactic(): string
     {
-        $tactics = ['ATTACK_MODE', 'DEFFEND_MODE', 'DEFAULT_MODE'];
+        $tactics = ['ATTACK_MODE', 'DEFEND_MODE', 'DEFAULT_MODE'];
         return $this->getRandomElement($tactics);
     }
 }
