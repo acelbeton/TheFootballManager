@@ -11,6 +11,14 @@ class LineupPlayer extends Model
 
     protected $table = 'lineup_players';
 
+    protected $fillable = [
+        'lineup_id',
+        'player_id',
+        'position',
+        'is_starter',
+        'position_order',
+    ];
+
     public function teamLineup()
     {
         return $this->belongsTo(TeamLineup::class);

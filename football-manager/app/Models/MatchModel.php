@@ -44,4 +44,15 @@ class MatchModel extends Model
     {
         return $this->hasMany(PlayerPerformance::class, 'match_id');
     }
+
+    public function events(): HasMany
+    {
+        return $this->hasMany(MatchEvent::class, 'match_id');
+    }
+
+    public function simulationStatus()
+    {
+        return $this->hasOne(MatchSimulationStatus::class, 'match_id')
+            ->orderBy('created_at', 'desc');
+    }
 }

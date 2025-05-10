@@ -37,6 +37,8 @@ class RealtimeMatchSimulationService
 
         $jobId = (string) Str::uuid();
 
+        $match->events()->delete();
+
         MatchSimulationStatus::create([
             'match_id' => $match->getKey(),
             'status' => 'QUEUED',
@@ -44,7 +46,9 @@ class RealtimeMatchSimulationService
             'current_minute' => 0
         ]);
 
-        SimulateMatchJob::dispatch($match->getKey())->onQueue('match-simulation');
+        SimulateMatchJob::dispatch($match->getKey())
+            ->onQueue('match-simulation')
+            ->delay(now()->addSeconds(2));
 
         return [
             'match_id' => $match->getKey(),
@@ -55,8 +59,42 @@ class RealtimeMatchSimulationService
 
     public function getMatchState(MatchModel $match)
     {
+        $match->refresh();
+
         $homeTeam = Team::findOrFail($match->home_team_id);
         $awayTeam = Team::findOrFail($match->away_team_id);
+
+        $simulationStatus = MatchSimulationStatus::where('match_id', $match->getKey())
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $currentMinute = $simulationStatus ? $simulationStatus->current_minute : 0;
+        $status = $simulationStatus ? $simulationStatus->status : $this->getMatchStatus($match);
+
+        $events = $match->events()->orderBy('minute', 'asc')->get();
+
+        $homeShots = 0;
+        $awayShots = 0;
+        $homeShotsOnTarget = 0;
+        $awayShotsOnTarget = 0;
+
+        foreach ($events as $event) {
+            if ($event->type === 'SHOT_ON_TARGET') {
+                if ($event->team === 'home') {
+                    $homeShots++;
+                    $homeShotsOnTarget++;
+                } else {
+                    $awayShots++;
+                    $awayShotsOnTarget++;
+                }
+            } else if ($event->type === 'SHOT_OFF_TARGET') {
+                if ($event->team === 'home') {
+                    $homeShots++;
+                } else {
+                    $awayShots++;
+                }
+            }
+        }
 
         return [
             'match_id' => $match->getKey(),
@@ -64,14 +102,21 @@ class RealtimeMatchSimulationService
                 'id' => $homeTeam->getKey(),
                 'name' => $homeTeam->name,
                 'score' => $match->home_team_score,
+                'shots' => $homeShots,
+                'shots_on_target' => $homeShotsOnTarget,
+                'possession' => 50,
             ],
             'away_team' => [
                 'id' => $awayTeam->getKey(),
                 'name' => $awayTeam->name,
                 'score' => $match->away_team_score,
+                'shots' => $awayShots,
+                'shots_on_target' => $awayShotsOnTarget,
+                'possession' => 50,
             ],
-            'status' => $this->getMatchStatus($match),
-            'current_minute' => $this->getCurrentMatchMinute($match),
+            'status' => $status,
+            'current_minute' => $currentMinute,
+            'events' => $events,
         ];
     }
 
@@ -117,8 +162,29 @@ class RealtimeMatchSimulationService
                 'status' => $status,
                 'current_minute' => $currentMinute
             ]);
+        } else {
+            MatchSimulationStatus::create([
+                'match_id' => $match->getKey(),
+                'status' => $status,
+                'current_minute' => $currentMinute,
+                'job_id' => (string) Str::uuid(),
+            ]);
         }
 
         Log::info("Match {$match->getKey()} status updated to {$status} at minute {$currentMinute}");
+    }
+
+    public function updateMatchScore(MatchModel $match, int $homeScore, int $awayScore): void
+    {
+        if ($match->home_team_score !== $homeScore || $match->away_team_score !== $awayScore) {
+            $match->update([
+                'home_team_score' => $homeScore,
+                'away_team_score' => $awayScore,
+            ]);
+
+            $match->refresh();
+
+            Log::info("Match {$match->getKey()} scores updated: {$homeScore} - {$awayScore}");
+        }
     }
 }

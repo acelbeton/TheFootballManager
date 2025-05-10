@@ -106,7 +106,7 @@ class TeamManagement extends Component
             $this->lineupPlayers[$position] = null;
         }
 
-        $playerPositions = LineupPlayer::where('team_lineup_id', $this->lineup->getKey())
+        $playerPositions = LineupPlayer::where('lineup_id', $this->lineup->getKey())
             ->where('is_starter', true)
             ->get();
 
@@ -136,7 +136,7 @@ class TeamManagement extends Component
         if ($this->upcomingMatch) {
             $this->lineup->update(['formation_id' => $this->selectedFormationId]);
 
-            LineupPlayer::where('team_lineup_id', $this->lineup->getKey())->delete();
+            LineupPlayer::where('lineup_id', $this->lineup->getKey())->delete();
         }
     }
 
@@ -191,12 +191,12 @@ class TeamManagement extends Component
 
     public function saveLineup(): void
     {
-        LineupPlayer::where('team_lineup_id', $this->lineup->getKey())->delete();
+        LineupPlayer::where('lineup_id', $this->lineup->getKey())->delete();
 
         foreach ($this->lineupPlayers as $pos => $playerId) {
             if ($playerId) {
                 LineupPlayer::create([
-                   'team_lineup_id' => $this->lineup->getKey(),
+                   'lineup_id' => $this->lineup->getKey(),
                    'player_id' => $playerId,
                    'position' => $pos,
                    'is_starter' => true,
@@ -206,7 +206,7 @@ class TeamManagement extends Component
 
         foreach ($this->benchPlayers as $playerId) {
             LineupPlayer::create([
-               'team_lineup_id' => $this->lineup->getKey(),
+               'lineup_id' => $this->lineup->getKey(),
                'player_id' => $playerId,
                'position' => 'BENCH',
                'is_starter' => true,

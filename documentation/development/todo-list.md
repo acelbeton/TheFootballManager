@@ -41,24 +41,41 @@
   * MLSZ adatbankos oldal példának
 
 ##
-- [ ] Training oldal elkészítése
+- [x] Training oldal elkészítése
   * Kiválasztani hogy ma training csapatszinten, játékosokra egyénileg
   * Algoritmus elkészítése hozzá
 
 ##
-- [ ] Aukció (Market) oldal elkészítése
+- [x] Aukció (Market) oldal elkészítése
   * Oldal elkészítése
   * Kitalálni hogyan működjön: felhasználó csinálhat aukciót vagy csak a rendszer készít
   * Websocket bevezetése, hogy elő legyen a piac
   * UPDATE: Javarészt készen van, még az nincs kész, hogyan lehet létrehozni egy aukciót + Ronda a design
 
 ##
-- [ ] Meccs rendszer létrehozása
+- [x] Meccs rendszer létrehozása
   * Algoritmus a meccs eseményekhez
   * Websocket használata itt is maybe(?) &rarr; Átgondolni itt a rendszert
 
-- [ ] Kondíció rendszer implementálása
+- [x] Kondíció rendszer implementálása
   * Hogyan tud romlani egy játékos kondíciója, és hogyan javulni?
 
 ##
-- [ ] Dashboard layout elkészítése
+- [x] Dashboard layout elkészítése
+
+
+VASÁRNAP EZ A KETTŐ KÉSZEN LEGYEN
+
+Match simulation észrevételek:
+- Match status nem frissül dinamikusan.
+- Túl kevés event.
+- Match stats nem marad meg meccs után.
+- Még minding rossz az event felsorolás abból, hogy görgetni kell meccs közben.
+- Possession mintha nem nagyon változna
+
+
+Team management észrevételek:
+- Túl nagy a pitch part
+- Nem lehet játékost választani
+- Nem a legközelebbi meccsre legyen a keret, hanem csak lehessen állítani rajta
+- Legyen egy alap kezdő 11 csinálva
