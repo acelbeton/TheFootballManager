@@ -11,6 +11,7 @@ use App\Models\Season;
 use App\Models\Statistic;
 use App\Models\Team;
 use App\Services\LeagueManagerService;
+use App\Services\LineupService;
 use Auth;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -26,10 +27,12 @@ class CreateTeam extends Component
     public $selectedLeagueId;
 
     protected $leagueManager;
+    protected $lineupService;
 
-    public function boot(LeagueManagerService $leagueManager)
+    public function boot(LeagueManagerService $leagueManager, LineupService $lineupService)
     {
         $this->leagueManager = $leagueManager;
+        $this->lineupService = $lineupService;
     }
 
     public function createTeam()
@@ -64,6 +67,8 @@ class CreateTeam extends Component
         Auth::user()->update(['current_team_id' => $team->getKey()]);
 
         $this->assignRandomPlayers($team);
+
+        $this->lineupService->createDefaultLineup($team);
 
         $this->leagueManager->setupLeague($league);
 

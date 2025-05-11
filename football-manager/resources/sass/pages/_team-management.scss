@@ -1,27 +1,27 @@
 @use '../abstract/variables' as vars;
 
 .team-management-container {
-    margin-bottom: vars.$spacing-lg;
+    margin-bottom: vars.$spacing-md;
 }
 
 .team-management-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: vars.$spacing-lg;
+    margin-bottom: vars.$spacing-md;
 
     h1 {
         margin: 0;
         font-weight: vars.$font-weight-semi-bold;
     }
 
-    .match-info {
+    .team-info {
         h3 {
             margin: 0;
             font-size: vars.$font-size-md;
         }
 
-        .match-date {
+        .team-description {
             color: vars.$color-text;
             font-size: vars.$font-size-sm;
         }
@@ -30,9 +30,9 @@
 
 .tactics-selection {
     background-color: vars.$color-background;
-    padding: vars.$spacing-md;
+    padding: vars.$spacing-sm;
     border-radius: vars.$border-radius-md;
-    margin-bottom: vars.$spacing-lg;
+    margin-bottom: vars.$spacing-md;
     box-shadow: vars.$shadow-sm;
 }
 
@@ -65,25 +65,25 @@
 }
 
 .lineup-container {
-    margin-bottom: vars.$spacing-lg;
+    margin-bottom: vars.$spacing-sm;
 }
 
 .pitch-container {
     background-color: vars.$color-background;
-    padding: vars.$spacing-md;
+    padding: vars.$spacing-xs;
     border-radius: vars.$border-radius-md;
     box-shadow: vars.$shadow-sm;
-    margin-bottom: vars.$spacing-lg;
+    margin-bottom: vars.$spacing-sm;
 }
 
 .football-pitch {
     position: relative;
     width: 100%;
-    padding-top: 150%;
+    padding-top: 60%;
     background-color: #4CAF50; // Zöld fűszín a háttérre
     border-radius: vars.$border-radius-md;
     overflow: hidden;
-    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
 
     &::before {
         content: '';
@@ -92,7 +92,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        border: 3px solid rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.7);
         border-radius: vars.$border-radius-sm;
     }
 
@@ -103,7 +103,7 @@
         width: 20%;
         height: 20%;
         border-radius: 50%;
-        border: 2px solid rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.7);
         transform: translate(-50%, -50%);
     }
 
@@ -120,19 +120,18 @@
 
     .center-line {
         position: absolute;
-        top: 0;
-        left: 50%;
-        width: 2px;
-        height: 100%;
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: 1px;
         background-color: rgba(255, 255, 255, 0.7);
-        transform: translateX(-50%);
     }
 
     .penalty-area {
         position: absolute;
         width: 40%;
         height: 20%;
-        border: 2px solid rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.7);
 
         &.penalty-area-left {
             top: 0;
@@ -151,7 +150,7 @@
         position: absolute;
         width: 20%;
         height: 10%;
-        border: 2px solid rgba(255, 255, 255, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.7);
 
         &.goal-area-left {
             top: 0;
@@ -189,14 +188,14 @@
     .player-position {
         position: absolute;
         width: 12%;
-        height: 12%;
+        height: 14%;
         transform: translate(-50%, -50%);
         cursor: pointer;
         z-index: 10;
 
         .position-label {
             position: absolute;
-            bottom: -20px;
+            bottom: -15px;
             left: 0;
             right: 0;
             text-align: center;
@@ -223,6 +222,11 @@
                 transform: scale(1.1);
             }
 
+            &.selected {
+                border: 2px solid vars.$color-primary;
+                box-shadow: 0 0 0 4px rgba(vars.$color-primary, 0.2);
+            }
+
             &.wrong-position {
                 background-color: vars.$color-warning;
                 border: 2px solid rgba(255, 255, 255, 0.5);
@@ -231,6 +235,7 @@
             .player-number {
                 font-size: vars.$font-size-sm;
                 font-weight: vars.$font-weight-bold;
+                margin-bottom: -3px;
             }
 
             .player-name {
@@ -240,6 +245,7 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 width: 100%;
+                max-width: 95%;
                 padding: 0 2px;
             }
 
@@ -258,17 +264,43 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: all 0.2s ease;
-
-            &:hover {
-                background-color: rgba(255, 255, 255, 0.5);
-            }
+            transition: all 0.3s ease;
+            position: relative;
 
             i {
                 font-size: vars.$font-size-md;
                 color: rgba(255, 255, 255, 0.7);
+                transition: all 0.3s ease;
+            }
+
+            .player-selection-banner ~ .lineup-container & {
+                background-color: rgba(255, 255, 255, 0.5);
+                border: 2px dashed vars.$color-primary;
+                animation: pulse 1.5s infinite;
+
+                i {
+                    color: vars.$color-primary;
+                }
+
+                &:hover {
+                    transform: scale(1.2);
+                    background-color: rgba(vars.$color-primary, 0.2);
+                    border-style: solid;
+                }
             }
         }
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(vars.$color-primary, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(vars.$color-primary, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(vars.$color-primary, 0);
     }
 }
 
@@ -279,10 +311,10 @@
     height: 100%;
 
     h3 {
-        padding: vars.$spacing-md;
+        padding: vars.$spacing-sm;
         margin: 0;
         border-bottom: 1px solid vars.$color-section-background;
-        font-size: vars.$font-size-md;
+        font-size: vars.$font-size-sm;
         font-weight: vars.$font-weight-semi-bold;
     }
 
@@ -290,14 +322,14 @@
         .position-tabs {
             display: flex;
             flex-wrap: wrap;
-            padding: vars.$spacing-sm;
-            gap: vars.$spacing-xs;
+            padding: 4px;
+            gap: 4px;
             border-bottom: 1px solid vars.$color-section-background;
 
             .position-tab {
                 background: none;
                 border: none;
-                padding: vars.$spacing-xs vars.$spacing-sm;
+                padding: 2px 4px;
                 font-size: vars.$font-size-sm;
                 cursor: pointer;
                 border-radius: vars.$border-radius-sm;
@@ -316,14 +348,15 @@
     }
 
     .players-list {
-        max-height: 500px;
+        max-height: 400px;
         overflow-y: auto;
-        padding: vars.$spacing-sm;
+        padding: vars.$spacing-xs;
 
         .player-card-container {
-            margin-bottom: vars.$spacing-sm;
+            margin-bottom: 4px;
 
             .player-card {
+                padding: 6px vars.$spacing-xs;
                 background-color: vars.$color-section-background;
                 border-radius: vars.$border-radius-md;
                 overflow: hidden;
@@ -333,6 +366,11 @@
 
                 &:hover {
                     box-shadow: vars.$shadow-md;
+                }
+
+                &.selected {
+                    border: 2px solid vars.$color-primary;
+                    box-shadow: 0 0 0 4px rgba(vars.$color-primary, 0.2);
                 }
 
                 &.in-lineup {
@@ -353,15 +391,15 @@
                     cursor: pointer;
 
                     .player-position-badge {
-                        width: 30px;
-                        height: 30px;
+                        width: 22px;
+                        height: 22px;
                         border-radius: 50%;
                         display: flex;
                         align-items: center;
                         justify-content: center;
                         font-size: vars.$font-size-sm;
                         font-weight: vars.$font-weight-semi-bold;
-                        margin-right: vars.$spacing-sm;
+                        margin-right: 6px;
 
                         &.goalkeeper {
                             background-color: #FFC107;
@@ -501,5 +539,173 @@
 
     .squad-selection {
         margin-top: vars.$spacing-lg;
+    }
+}
+
+.instructions-panel {
+    margin-bottom: vars.$spacing-sm;
+
+    .alert {
+        display: flex;
+        align-items: center;
+        gap: vars.$spacing-sm;
+        font-size: vars.$font-size-sm;
+        padding: vars.$spacing-xs vars.$spacing-sm;
+
+        i {
+            font-size: vars.$font-size-md;
+        }
+    }
+}
+
+.player-info {
+    display: flex;
+    padding: vars.$spacing-sm;
+    cursor: pointer;
+    position: relative;
+
+    &:hover {
+        background-color: rgba(vars.$color-primary, 0.05);
+
+        .assign-button {
+            opacity: 1;
+        }
+    }
+
+    .assign-button {
+        position: absolute;
+        right: vars.$spacing-sm;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        background-color: vars.$color-primary;
+        color: white;
+        padding: 2px 5px;
+        border-radius: vars.$border-radius-sm;
+        font-size: vars.$font-size-stat;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+}
+
+.player-selection-banner {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 800px;
+    z-index: 1000;
+    opacity: 0;
+    margin-bottom: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+
+    &.animate-in {
+        opacity: 1;
+        pointer-events: auto;
+        bottom: 20px;
+    }
+
+    .selection-card {
+        background-color: white;
+        border-radius: vars.$border-radius-md;
+        padding: vars.$spacing-xs vars.$spacing-sm;
+        box-shadow: vars.$shadow-lg;
+        border-left: 4px solid vars.$color-primary;
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .player-avatar {
+        margin-right: vars.$spacing-md;
+
+        .player-position-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: vars.$font-size-sm;
+            font-weight: vars.$font-weight-bold;
+            box-shadow: vars.$shadow-sm;
+
+            &.goalkeeper {
+                background-color: #FFC107;
+                color: #212529;
+            }
+
+            &.centre-back, &.fullback {
+                background-color: #28A745;
+                color: white;
+            }
+
+            &.midfielder {
+                background-color: #17A2B8;
+                color: white;
+            }
+
+            &.winger, &.striker {
+                background-color: #DC3545;
+                color: white;
+            }
+        }
+    }
+
+    .selection-content {
+        flex: 1;
+
+        .selection-player {
+            display: flex;
+            align-items: center;
+            margin-bottom: vars.$spacing-xs;
+
+            .player-name {
+                font-weight: vars.$font-weight-semi-bold;
+                font-size: vars.$font-size-md;
+                margin-right: vars.$spacing-sm;
+            }
+
+            .player-rating {
+                background-color: vars.$color-premium;
+                color: #212529;
+                padding: 1px 4px;
+                border-radius: vars.$border-radius-sm;
+                font-size: vars.$font-size-sm;
+                font-weight: vars.$font-weight-semi-bold;
+            }
+        }
+
+        .selection-instruction {
+            color: vars.$color-text;
+            display: flex;
+            align-items: center;
+
+            i {
+                color: vars.$color-primary;
+                margin-right: vars.$spacing-xs;
+            }
+        }
+    }
+
+    .selection-cancel {
+        background: none;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: vars.$color-text;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background-color: vars.$color-section-background;
+            color: vars.$color-primary;
+        }
     }
 }

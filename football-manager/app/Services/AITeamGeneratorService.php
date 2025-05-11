@@ -11,9 +11,15 @@ use Illuminate\Support\Facades\DB;
 
 class AITeamGeneratorService
 {
-    const MIN_TEAMS_PER_LEAGUE = 8;
+    const MIN_TEAMS_PER_LEAGUE = 4;
     const TEAM_NAME_PREFIXES = ['FC', 'United', 'City', 'Athletic', 'Rovers', 'Wanderers'];
     const TEAM_NAME_LOCATIONS = ['London', 'Madrid', 'Paris', 'Milan', 'Munich', 'Amsterdam', 'Budapest', 'Szeged', 'Debrecen'];
+    protected $lineupService;
+
+    public function __construct(LineupService $lineupService)
+    {
+        $this->lineupService = $lineupService;
+    }
 
     public function generateTeamsForSeason(Season $season, int $targetTeamCount = self::MIN_TEAMS_PER_LEAGUE): array
     {
@@ -33,6 +39,9 @@ class AITeamGeneratorService
         return $createdTeams;
     }
 
+    /**
+     * @throws \Exception
+     */
     private function createAITeam(Season $season): Team
     {
         $prefix = $this->getRandomElement(self::TEAM_NAME_PREFIXES);
@@ -51,6 +60,7 @@ class AITeamGeneratorService
         ]);
 
         $this->assignPlayersToTeam($team, $baseTeamRating);
+        $this->lineupService->createDefaultLineup($team);
 
         return $team;
     }

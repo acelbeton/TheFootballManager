@@ -5,7 +5,6 @@ namespace App\Livewire;
 use App\Http\Enums\PlayerPosition;
 use App\Models\Formation;
 use App\Models\LineupPlayer;
-use App\Models\MatchModel;
 use App\Models\Player;
 use App\Models\TeamLineup;
 use Illuminate\Support\Facades\Auth;
@@ -16,7 +15,6 @@ use Livewire\Component;
 class TeamManagement extends Component
 {
     public $team;
-    public $upcomingMatch;
     public $formations;
     public $selectedFormationId;
     public $selectedTactic;
@@ -28,6 +26,32 @@ class TeamManagement extends Component
     public $benchPlayers = [];
     public $showWarning = false;
     public $warningMessage = '';
+    public $selectedPlayerForAssignment = null;
+
+    protected $formationToPlayerPosition = [
+        'GOALKEEPER' => 'GOALKEEPER',
+        'CENTRE_BACK_LEFT' => 'CENTRE_BACK',
+        'CENTRE_BACK_RIGHT' => 'CENTRE_BACK',
+        'CENTRE_BACK_CENTER' => 'CENTRE_BACK',
+        'FULLBACK_LEFT' => 'FULLBACK',
+        'FULLBACK_RIGHT' => 'FULLBACK',
+        'MIDFIELDER_LEFT' => 'MIDFIELDER',
+        'MIDFIELDER_RIGHT' => 'MIDFIELDER',
+        'MIDFIELDER_CENTER' => 'MIDFIELDER',
+        'MIDFIELDER_CENTER_LEFT' => 'MIDFIELDER',
+        'MIDFIELDER_CENTER_RIGHT' => 'MIDFIELDER',
+        'DEFENSIVE_MIDFIELDER_LEFT' => 'MIDFIELDER',
+        'DEFENSIVE_MIDFIELDER_RIGHT' => 'MIDFIELDER',
+        'ATTACKING_MIDFIELDER_CENTER' => 'MIDFIELDER',
+        'ATTACKING_MIDFIELDER_LEFT' => 'WINGER',
+        'ATTACKING_MIDFIELDER_RIGHT' => 'WINGER',
+        'WINGER_LEFT' => 'WINGER',
+        'WINGER_RIGHT' => 'WINGER',
+        'STRIKER' => 'STRIKER',
+        'STRIKER_LEFT' => 'STRIKER',
+        'STRIKER_RIGHT' => 'STRIKER',
+        'STRIKER_CENTER' => 'STRIKER',
+    ];
 
     protected $positionPreferences = [
         'GOALKEEPER' => ['GOALKEEPER'],
@@ -43,44 +67,40 @@ class TeamManagement extends Component
         $this->team = Auth::user()->currentTeam;
 
         if (!$this->team) {
-            redirect()->route('change-team'); // TODO maybe smth else here
+            redirect()->route('change-team');
         }
-
-        $this->upcomingMatch = MatchModel::where(function($query) {
-            $query->where('home_team_id', $this->team->getKey())
-                ->orWhere('away_team_id', $this->team->getKey());
-        })
-        ->where('match_date', '>', now())
-        ->orderBy('match_date')
-        ->first();
 
         $this->formations = Formation::all();
-
         $this->players = Player::where('team_id', $this->team->getKey())->get();
 
-        if ($this->upcomingMatch) {
-            $this->lineup = TeamLineup::firstOrCreate(
-                ['team_id' => $this->team->getKey(), 'match_id' => $this->upcomingMatch->getKey()],
-                ['formation_id' => $this->formations->first()->getKey(), $this->team->current_tactic]
-            );
+        $this->lineup = TeamLineup::where('team_id', $this->team->getKey())
+            ->whereNull('match_id')
+            ->first();
 
-            $this->selectedFormationId = $this->lineup->formation_id;
-            $this->selectedTactic = $this->lineup->tactic;
+        if (!$this->lineup) {
+            $this->lineup = TeamLineup::create([
+                'team_id' => $this->team->getKey(),
+                'match_id' => null,
+                'formation_id' => $this->formations->first()->getKey(),
+                'tactic' => $this->team->current_tactic ?? 'DEFAULT_MODE',
+            ]);
 
-            $this->loadPositionsForFormation();
-
-            $this->loadExistingLineup();
-        } else {
-            $this->selectedFormationId = $this->formations->first()->getKey();
-            $this->selectedTactic = $this->team->current_tactic;
-            $this->loadPositionsForFormation();
-
-            foreach ($this->positions as $position => $cords) {
-                $this->lineupPlayers[$position] = null;
+            foreach ($this->players as $player) {
+                LineupPlayer::create([
+                    'lineup_id' => $this->lineup->getKey(),
+                    'player_id' => $player->getKey(),
+                    'position' => $player->position,
+                    'is_starter' => false,
+                    'position_order' => 0,
+                ]);
             }
-
-            $this->benchPlayers = $this->players->pluck('id')->toArray();
         }
+
+        $this->selectedFormationId = $this->lineup->formation_id;
+        $this->selectedTactic = $this->lineup->tactic;
+
+        $this->loadPositionsForFormation();
+        $this->loadExistingLineup();
     }
 
     public function loadPositionsForFormation(): void
@@ -102,20 +122,52 @@ class TeamManagement extends Component
 
     public function loadExistingLineup(): void
     {
-        foreach($this->positions as $position => $cords) {
+        foreach ($this->positions as $position => $coords) {
             $this->lineupPlayers[$position] = null;
         }
 
-        $playerPositions = LineupPlayer::where('lineup_id', $this->lineup->getKey())
-            ->where('is_starter', true)
-            ->get();
-
-        foreach ($playerPositions as $playerPosition) {
-            $this->lineupPlayers[$playerPosition->position] = $playerPosition->player_id;
+        $dbPositionToFormation = [];
+        foreach ($this->formationToPlayerPosition as $formPos => $dbPos) {
+            if (!isset($dbPositionToFormation[$dbPos])) {
+                $dbPositionToFormation[$dbPos] = [];
+            }
+            $dbPositionToFormation[$dbPos][] = $formPos;
         }
 
-        $startingPlayerIds = $playerPositions->pluck('player_id')->toArray();
-        $this->benchPlayers = $this->players->whereNotIn('id', $startingPlayerIds)->pluck('id')->toArray();
+        $starterPlayers = LineupPlayer::where('lineup_id', $this->lineup->getKey())
+            ->where('is_starter', true)
+            ->with('player')
+            ->get();
+
+        $occupiedPositions = [];
+
+        foreach ($starterPlayers as $lineupPlayer) {
+            $player = $lineupPlayer->player;
+            $dbPosition = $lineupPlayer->position;
+
+            $potentialFormationPositions = $dbPositionToFormation[$dbPosition] ?? [];
+
+            $bestPosition = null;
+            foreach ($potentialFormationPositions as $formPos) {
+                if (isset($this->positions[$formPos]) && !isset($occupiedPositions[$formPos])) {
+                    if ($this->isPreferredPosition($player->position, $formPos)) {
+                        $bestPosition = $formPos;
+                        break;
+                    } else if (!$bestPosition) {
+                        $bestPosition = $formPos;
+                    }
+                }
+            }
+
+            if ($bestPosition) {
+                $this->lineupPlayers[$bestPosition] = $player->getKey();
+                $occupiedPositions[$bestPosition] = true;
+            }
+        }
+
+        $allPlayerIds = $this->players->pluck('id')->toArray();
+        $starterIds = array_filter($this->lineupPlayers);
+        $this->benchPlayers = array_values(array_diff($allPlayerIds, $starterIds));
     }
 
     public function isPreferredPosition($playerType, $formationPosition): bool
@@ -127,37 +179,73 @@ class TeamManagement extends Component
     {
         $this->loadPositionsForFormation();
 
-        foreach($this->positions as $position => $cords) {
+        foreach($this->positions as $position => $coords) {
             $this->lineupPlayers[$position] = null;
         }
 
         $this->benchPlayers = $this->players->pluck('id')->toArray();
 
-        if ($this->upcomingMatch) {
-            $this->lineup->update(['formation_id' => $this->selectedFormationId]);
+        $this->lineup->update(['formation_id' => $this->selectedFormationId]);
 
-            LineupPlayer::where('lineup_id', $this->lineup->getKey())->delete();
+        LineupPlayer::where('lineup_id', $this->lineup->getKey())->delete();
+
+        foreach ($this->players as $player) {
+            LineupPlayer::create([
+                'lineup_id' => $this->lineup->getKey(),
+                'player_id' => $player->getKey(),
+                'position' => $player->position,
+                'is_starter' => false,
+                'position_order' => 0,
+            ]);
         }
+
+        $this->dispatch('notify', [
+            'type' => 'info',
+            'message' => 'Formation changed to ' . Formation::find($this->selectedFormationId)->name
+        ]);
     }
 
     public function changeTactic(): void
     {
-        if ($this->upcomingMatch) {
-            $this->lineup->update(['tactic' => $this->selectedTactic]);
+        $this->lineup->update(['tactic' => $this->selectedTactic]);
+
+        $this->dispatch('notify', [
+            'type' => 'info',
+            'message' => 'Tactic changed to ' . str_replace('_', ' ', $this->selectedTactic)
+        ]);
+    }
+
+    public function selectPlayerForAssignment($playerId)
+    {
+        $this->selectedPlayerForAssignment = (int)$playerId;
+    }
+
+    public function cancelPlayerSelection()
+    {
+        $this->selectedPlayerForAssignment = null;
+    }
+
+    public function assignPlayerToPosition($position)
+    {
+        if ($this->selectedPlayerForAssignment) {
+            $this->assignPlayer($this->selectedPlayerForAssignment, $position);
+            $this->selectedPlayerForAssignment = null;
         }
     }
 
     public function assignPlayer($playerId, $position): void
     {
+        $playerId = (int) $playerId;
+        $position = (string) $position;
+
         foreach ($this->lineupPlayers as $pos => $pid) {
             if ($pid === $playerId) {
                 $this->lineupPlayers[$pos] = null;
             }
         }
 
-        $this->benchPlayers = array_diff($this->benchPlayers, [$playerId]);
-
-        if ($this->lineupPlayers[$position]) {
+        $this->benchPlayers = array_values(array_diff($this->benchPlayers, [$playerId]));
+        if (isset($this->lineupPlayers[$position]) && $this->lineupPlayers[$position]) {
             $this->benchPlayers[] = $this->lineupPlayers[$position];
         }
 
@@ -171,21 +259,27 @@ class TeamManagement extends Component
             $this->showWarning = false;
         }
 
-        if ($this->upcomingMatch) {
-            $this->saveLineup();
-        }
+        $this->saveLineup();
+
+        $this->dispatch('notify', [
+            'type' => 'success',
+            'message' => $player->name . ' assigned to ' . $this->formatPositionName($position)
+        ]);
     }
 
     public function removePlayerFromLineup($position): void
     {
         if ($this->lineupPlayers[$position]) {
+            $player = $this->players->firstWhere('id', $this->lineupPlayers[$position]);
             $this->benchPlayers[] = $this->lineupPlayers[$position];
-
             $this->lineupPlayers[$position] = null;
 
-            if ($this->upcomingMatch) {
-                $this->saveLineup();
-            }
+            $this->saveLineup();
+
+            $this->dispatch('notify', [
+                'type' => 'info',
+                'message' => $player->name . ' removed from lineup'
+            ]);
         }
     }
 
@@ -193,32 +287,37 @@ class TeamManagement extends Component
     {
         LineupPlayer::where('lineup_id', $this->lineup->getKey())->delete();
 
-        foreach ($this->lineupPlayers as $pos => $playerId) {
+        foreach ($this->lineupPlayers as $formationPosition => $playerId) {
             if ($playerId) {
-                LineupPlayer::create([
-                   'lineup_id' => $this->lineup->getKey(),
-                   'player_id' => $playerId,
-                   'position' => $pos,
-                   'is_starter' => true,
-                ]);
+                $dbPosition = $this->formationToPlayerPosition[$formationPosition] ?? null;
+
+                if ($dbPosition) {
+                    LineupPlayer::create([
+                        'lineup_id' => $this->lineup->getKey(),
+                        'player_id' => $playerId,
+                        'position' => $dbPosition,
+                        'is_starter' => true,
+                        'position_order' => 0,
+                    ]);
+                }
             }
         }
 
         foreach ($this->benchPlayers as $playerId) {
-            LineupPlayer::create([
-               'lineup_id' => $this->lineup->getKey(),
-               'player_id' => $playerId,
-               'position' => 'BENCH',
-               'is_starter' => true,
-            ]);
+            $player = $this->players->firstWhere('id', $playerId);
+
+            if ($player) {
+                LineupPlayer::create([
+                    'lineup_id' => $this->lineup->getKey(),
+                    'player_id' => $playerId,
+                    'position' => $player->position,
+                    'is_starter' => false,
+                    'position_order' => 0,
+                ]);
+            }
         }
 
         $this->team->update(['current_tactic' => $this->selectedTactic]);
-
-        $this->dispatch('notify', [
-            'type' => 'success',
-            'message' => 'Lineup saved'
-        ]);
     }
 
     public function formatPositionName($position): string
@@ -226,7 +325,7 @@ class TeamManagement extends Component
         return ucwords(strtolower(str_replace('_', ' ', $position)));
     }
 
-    public function render(): \Illuminate\Foundation\Application|\Illuminate\Contracts\View\Factory|\Illuminate\Contracts\View\View
+    public function render()
     {
         return view('livewire.team-management');
     }
