@@ -22,5 +22,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         League::factory(5)->create();
+
+        $this->call(FormationSeeder::class);
     }
 }

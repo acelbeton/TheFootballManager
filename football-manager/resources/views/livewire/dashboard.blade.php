@@ -100,7 +100,7 @@
                                         </div>
                                         <div class="quick-stat">
                                             <span class="label">Avg. Rating:</span>
-                                            <span class="value">{{ round($rosterSummary['avg_rating']) }} €</span>
+                                            <span class="value">{{ round($rosterSummary['avg_rating']) }}</span>
                                         </div>
                                     </div>
                                 </div>

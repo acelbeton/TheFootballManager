@@ -12,8 +12,12 @@ use Illuminate\Support\Facades\DB;
 class AITeamGeneratorService
 {
     const MIN_TEAMS_PER_LEAGUE = 4;
-    const TEAM_NAME_PREFIXES = ['FC', 'United', 'City', 'Athletic', 'Rovers', 'Wanderers'];
-    const TEAM_NAME_LOCATIONS = ['London', 'Madrid', 'Paris', 'Milan', 'Munich', 'Amsterdam', 'Budapest', 'Szeged', 'Debrecen'];
+    const TEAM_NAME_PREFIXES = ['FC', 'United', 'City', 'Athletic', 'Rovers', 'Wanderers', 'CF', 'Team'];
+    const TEAM_NAME_LOCATIONS = [
+        'London', 'Madrid', 'Paris', 'Milan', 'Munich', 'Manchester',
+        'Amsterdam', 'Budapest', 'Szeged', 'Debrecen', 'Berlin',
+        'Liverpool', 'Athens', 'Istanbul', 'Dublin', 'Barcelona',
+    ];
     protected $lineupService;
 
     public function __construct(LineupService $lineupService)
@@ -89,26 +93,34 @@ class AITeamGeneratorService
             PlayerPosition::STRIKER->value => 3,
         ];
 
-        $minVar = -10;
-        $maxVar = 10;
+        $teamQualityTier = intdiv($baseRating - 30, 10);
+        $teamQualityTier = max(1, min(5, $teamQualityTier));
 
         foreach ($positions as $position => $count) {
             for ($i = 0; $i < $count; $i++) {
-                $playerRating = min(100, max(1, $baseRating + rand($minVar, $maxVar)));
+                $variation = rand(-1, 1);
+                $playerTier = $teamQualityTier + $variation;
+                if (rand(1, 100) <= 5) $playerTier = 5;
+                if (rand(1, 100) <= 5) $playerTier = 1;
+
+                $playerTier = max(1, min(5, $playerTier));
+
+                $enumPosition = PlayerPosition::from($position);
+                $stats = StatsHelper::getStatsForPosition($enumPosition, $playerTier);
+                $rating = StatsHelper::calculateOverallRating($stats, $enumPosition);
+                $marketValue = StatsHelper::calculateMarketValue($rating, $enumPosition);
 
                 $player = Player::create([
                     'name' => $this->generatePlayerName(),
-                    'rating' => $playerRating,
+                    'rating' => $rating,
                     'team_id' => $team->id,
                     'position' => $position,
-                    'market_value' => $this->calculateMarketValue($playerRating),
+                    'market_value' => $marketValue,
                     'is_on_market' => rand(0, 10) > 8,
                     'condition' => rand(70, 100),
                     'is_injured' => false,
                 ]);
 
-                $enumPosition = PlayerPosition::from($position);
-                $stats = StatsHelper::getStatsForPosition($enumPosition);
                 $player->statistics()->create($stats);
             }
         }
@@ -127,8 +139,16 @@ class AITeamGeneratorService
 
     private function generatePlayerName(): string
     {
-        $firstNames = ['John', 'James', 'David', 'Michael', 'Robert', 'Carlos', 'Juan', 'Francesco', 'Marco', 'Stefan', 'Hans', 'Pierre', 'Gábor', 'István', 'Péter'];
-        $lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Rodriguez', 'Rossi', 'Ferrari', 'Müller', 'Schmidt', 'Dubois', 'Nagy', 'Kovács', 'Tóth'];
+        $firstNames = [
+            'John', 'James', 'David', 'Michael', 'Robert', 'Carlos', 'Juan', 'Francesco',
+            'Marco', 'Stefan', 'Hans', 'Pierre', 'Gábor', 'István', 'Péter', 'László',
+            'Mohamed', 'Ali', 'Ahmed', 'Hiroshi', 'Takashi', 'Wei', 'Li', 'Kim', 'Park'
+        ];
+        $lastNames = [
+            'Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Rodriguez', 'Rossi',
+            'Ferrari', 'Müller', 'Schmidt', 'Dubois', 'Nagy', 'Kovács', 'Tóth', 'Horváth',
+            'Silva', 'Santos', 'Tanaka', 'Suzuki', 'Zhang', 'Wang', 'Kim', 'Park', 'Nguyen'
+        ];
 
         $firstName = $this->getRandomElement($firstNames);
         $lastName = $this->getRandomElement($lastNames);

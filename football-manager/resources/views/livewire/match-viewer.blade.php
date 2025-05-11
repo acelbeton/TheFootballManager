@@ -279,6 +279,49 @@
                                 this.handleMatchUpdate(update);
                             });
                     }
+
+                    Livewire.on('status_updated', (data) => {
+                        console.log("Match status update received:", data);
+
+                        if (data.status === 'COMPLETED') {
+                            this.isLive = false;
+
+                            const liveIndicator = document.querySelector('.live-indicator');
+                            if (liveIndicator) {
+                                liveIndicator.textContent = 'FULL TIME';
+                                liveIndicator.className = 'finished-indicator';
+                            }
+
+                            this.addFulltimeCommentary();
+
+                            while (this.pendingEvents.length > 0) {
+                                const event = this.pendingEvents.shift();
+                                this.displayEvent(event, true);
+                            }
+
+                            if (this.minuteUpdateTimer) {
+                                clearInterval(this.minuteUpdateTimer);
+                                this.minuteUpdateTimer = null;
+                            }
+
+                            if (this.eventDisplayTimer) {
+                                clearInterval(this.eventDisplayTimer);
+                                this.eventDisplayTimer = null;
+                            }
+                        } else if (data.status === 'IN_PROGRESS') {
+                            this.isLive = true;
+
+                            const upcomingIndicator = document.querySelector('.upcoming-indicator');
+                            if (upcomingIndicator) {
+                                upcomingIndicator.textContent = 'LIVE';
+                                upcomingIndicator.className = 'live-indicator';
+                            }
+
+                            if (!this.minuteUpdateTimer) {
+                                this.startMinuteUpdater();
+                            }
+                        }
+                    });
                 });
             },
 
@@ -429,12 +472,28 @@
                 if (matchData.home_team && matchData.away_team) {
                     if (matchData.home_team.score !== undefined) {
                         const homeScore = document.querySelector('.home-score');
-                        if (homeScore) homeScore.textContent = matchData.home_team.score;
+                        const currentHomeScore = parseInt(homeScore.textContent);
+
+                        if (homeScore && matchData.home_team.score > currentHomeScore) {
+                            homeScore.textContent = matchData.home_team.score;
+                            homeScore.classList.add('score-updated');
+                            setTimeout(() => homeScore.classList.remove('score-updated'), 1500);
+                        } else if (homeScore) {
+                            homeScore.textContent = matchData.home_team.score;
+                        }
                     }
 
                     if (matchData.away_team.score !== undefined) {
                         const awayScore = document.querySelector('.away-score');
-                        if (awayScore) awayScore.textContent = matchData.away_team.score;
+                        const currentAwayScore = parseInt(awayScore.textContent);
+
+                        if (awayScore && matchData.away_team.score > currentAwayScore) {
+                            awayScore.textContent = matchData.away_team.score;
+                            awayScore.classList.add('score-updated');
+                            setTimeout(() => awayScore.classList.remove('score-updated'), 1500);
+                        } else if (awayScore) {
+                            awayScore.textContent = matchData.away_team.score;
+                        }
                     }
 
                     this.updateStats(matchData);
@@ -520,17 +579,25 @@
 
             updateStats: function(update) {
                 if (update.home_team.possession !== undefined && update.away_team.possession !== undefined) {
-                    const homePossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.home-bar');
-                    const awayPossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.away-bar');
+                    const currentHomePossession = parseInt(document.querySelector('.stat-item:nth-child(1) .home-value').textContent) || 50;
+                    const currentAwayPossession = parseInt(document.querySelector('.stat-item:nth-child(1) .away-value').textContent) || 50;
 
-                    if (homePossessionBar) homePossessionBar.style.width = `${update.home_team.possession}%`;
-                    if (awayPossessionBar) awayPossessionBar.style.width = `${update.away_team.possession}%`;
+                    const targetHomePossession = update.home_team.possession;
+                    const targetAwayPossession = update.away_team.possession;
 
-                    const homePossessionValue = document.querySelector('.stat-item:nth-child(1) .home-value');
-                    const awayPossessionValue = document.querySelector('.stat-item:nth-child(1) .away-value');
+                    if (Math.abs(currentHomePossession - targetHomePossession) >= 2) {
+                        this.animatePossessionChange(currentHomePossession, targetHomePossession, currentAwayPossession, targetAwayPossession);
+                    } else {
+                        const homePossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.home-bar');
+                        const awayPossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.away-bar');
+                        const homePossessionValue = document.querySelector('.stat-item:nth-child(1) .home-value');
+                        const awayPossessionValue = document.querySelector('.stat-item:nth-child(1) .away-value');
 
-                    if (homePossessionValue) homePossessionValue.textContent = `${update.home_team.possession}%`;
-                    if (awayPossessionValue) awayPossessionValue.textContent = `${update.away_team.possession}%`;
+                        if (homePossessionBar) homePossessionBar.style.width = `${update.home_team.possession}%`;
+                        if (awayPossessionBar) awayPossessionBar.style.width = `${update.away_team.possession}%`;
+                        if (homePossessionValue) homePossessionValue.textContent = `${update.home_team.possession}%`;
+                        if (awayPossessionValue) awayPossessionValue.textContent = `${update.away_team.possession}%`;
+                    }
                 }
 
                 if (update.home_team.shots !== undefined && update.away_team.shots !== undefined) {
@@ -548,6 +615,45 @@
                     if (homeShotsOnTargetValue) homeShotsOnTargetValue.textContent = update.home_team.shots_on_target;
                     if (awayShotsOnTargetValue) awayShotsOnTargetValue.textContent = update.away_team.shots_on_target;
                 }
+            },
+
+            animatePossessionChange: function(startHome, endHome, startAway, endAway) {
+                const homePossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.home-bar');
+                const awayPossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.away-bar');
+                const homePossessionValue = document.querySelector('.stat-item:nth-child(1) .home-value');
+                const awayPossessionValue = document.querySelector('.stat-item:nth-child(1) .away-value');
+
+                if (!homePossessionBar || !awayPossessionBar || !homePossessionValue || !awayPossessionValue) {
+                    return;
+                }
+
+                homePossessionValue.classList.add('changing');
+                awayPossessionValue.classList.add('changing');
+
+                const duration = 500;
+                const startTime = performance.now();
+
+                const animate = (currentTime) => {
+                    const elapsedTime = currentTime - startTime;
+                    const progress = Math.min(elapsedTime / duration, 1);
+                    const easeProgress = progress * (2 - progress);
+                    const currentHomeValue = Math.round(startHome + (endHome - startHome) * easeProgress);
+                    const currentAwayValue = Math.round(startAway + (endAway - startAway) * easeProgress);
+
+                    homePossessionBar.style.width = `${currentHomeValue}%`;
+                    awayPossessionBar.style.width = `${currentAwayValue}%`;
+                    homePossessionValue.textContent = `${currentHomeValue}%`;
+                    awayPossessionValue.textContent = `${currentAwayValue}%`;
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        homePossessionValue.classList.remove('changing');
+                        awayPossessionValue.classList.remove('changing');
+                    }
+                };
+
+                requestAnimationFrame(animate);
             },
 
             startMinuteUpdater: function() {
@@ -568,7 +674,7 @@
                     } else {
                         clearInterval(this.minuteUpdateTimer);
                     }
-                }, 2000);
+                }, 1000);
             },
 
             displayEvent: function(event, shouldScroll = true) {
@@ -598,13 +704,13 @@
                 item.id = eventId;
 
                 item.innerHTML = `
-                <div class="event-minute">${event.minute}'</div>
-                <div class="event-icon">${this.getEventIcon(event.type)}</div>
-                <div class="event-content">
-                    <div class="event-text">${event.commentary}</div>
-                    ${event.type === 'GOAL' ? this.formatGoalDetails(event) : ''}
-                </div>
-            `;
+                    <div class="event-minute">${event.minute}'</div>
+                    <div class="event-icon">${this.getEventIcon(event.type)}</div>
+                    <div class="event-content">
+                        <div class="event-text">${event.commentary}</div>
+                        ${event.type === 'GOAL' ? this.formatGoalDetails(event) : ''}
+                    </div>
+                `;
 
                 if (this.isLive && shouldScroll) {
                     item.style.opacity = '0';
@@ -617,6 +723,29 @@
                     }, 10);
                 }
 
+                if (event.type === 'GOAL') {
+                    item.classList.add('goal-event-highlight');
+
+                    setTimeout(() => {
+                        feed.appendChild(item);
+
+                        this.scrollToBottom(feed);
+
+                        const celebrationOverlay = document.createElement('div');
+                        celebrationOverlay.className = 'goal-celebration-overlay';
+                        celebrationOverlay.textContent = 'GOAL!';
+                        document.querySelector('.match-viewer-container').appendChild(celebrationOverlay);
+
+                        setTimeout(() => celebrationOverlay.classList.add('show'), 10);
+                        setTimeout(() => {
+                            celebrationOverlay.classList.remove('show');
+                            setTimeout(() => celebrationOverlay.remove(), 1000);
+                        }, 1000);
+                    }, 400);
+
+                    return;
+                }
+
                 feed.appendChild(item);
 
                 if (shouldScroll) {
@@ -625,26 +754,6 @@
                     setTimeout(() => {
                         item.classList.remove('new-event');
                     }, 2000);
-
-                    if (event.type === 'GOAL' && window.Audio) {
-                        try {
-                            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                            const oscillator = audioContext.createOscillator();
-                            const gainNode = audioContext.createGain();
-
-                            oscillator.type = 'sine';
-                            oscillator.frequency.value = 523.25;
-                            gainNode.gain.value = 0.1;
-
-                            oscillator.connect(gainNode);
-                            gainNode.connect(audioContext.destination);
-
-                            oscillator.start(0);
-                            oscillator.stop(audioContext.currentTime + 0.2);
-                        } catch(e) {
-                            console.log("Audio notification failed:", e);
-                        }
-                    }
                 }
             },
 
@@ -797,7 +906,7 @@
             if (minuteCounter) minuteCounter.style.display = 'inline-block';
         };
 
-        setInterval(ensureVisibility, 2000);
+        setInterval(ensureVisibility, 1000);
 
         const observer = new MutationObserver(ensureVisibility);
         observer.observe(document.getElementById('js-commentary-feed') || document, {

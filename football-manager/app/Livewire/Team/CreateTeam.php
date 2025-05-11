@@ -86,18 +86,78 @@ class CreateTeam extends Component
             PlayerPosition::STRIKER->value => 2,
         ];
 
+        $teamQualityTier = $this->determineTeamQualityTier($team);
+
         foreach ($positions as $position => $count) {
-            Player::factory($count)->create([
-                'team_id'  => $team->id,
-                'position' => $position,
-            ])->each(function ($player) use ($position) {
+            for ($i = 0; $i < $count; $i++) {
+                $playerTier = $this->getPlayerQualityTier($teamQualityTier);
                 $enumPosition = PlayerPosition::from($position);
-                $stats = StatsHelper::getStatsForPosition($enumPosition);
+                $stats = StatsHelper::getStatsForPosition($enumPosition, $playerTier);
+                $rating = StatsHelper::calculateOverallRating($stats, $enumPosition);
+                $marketValue = StatsHelper::calculateMarketValue($rating, $enumPosition);
+
+                $player = Player::create([
+                    'name' => $this->generatePlayerName(),
+                    'rating' => $rating,
+                    'market_value' => $marketValue,
+                    'team_id' => $team->id,
+                    'position' => $position,
+                    'condition' => rand(80, 100),
+                    'is_injured' => false,
+                    'is_on_market' => rand(1, 10) > 8,
+                ]);
+
                 $player->statistics()->create($stats);
-            });
+            }
         }
 
         $this->updateTeamRating($team);
+    }
+
+    private function determineTeamQualityTier(Team $team): int
+    {
+        $baseQuality = $team->user_id ? 3 : rand(1, 5);
+        if ($team->team_budget > 12000) $baseQuality++;
+        if ($team->team_budget < 9000) $baseQuality--;
+
+        return max(1, min(5, $baseQuality));
+    }
+
+    private function getPlayerQualityTier(int $teamTier): int
+    {
+        $variation = rand(-1, 1);
+        $playerTier = $teamTier + $variation;
+
+        if (rand(1, 100) <= 5) {
+            $playerTier = 5;
+        }
+
+        if (rand(1, 100) <= 5) {
+            $playerTier = 1;
+        }
+
+        return max(1, min(5, $playerTier));
+    }
+
+    private function generatePlayerName(): string
+    {
+        $roll = rand(1, 100);
+
+        if ($roll <= 60) {
+            $firstNames = ['Gábor', 'István', 'Péter', 'János', 'Zoltán', 'Ferenc', 'László', 'Attila', 'Tamás', 'Dániel'];
+            $lastNames = ['Nagy', 'Kovács', 'Tóth', 'Szabó', 'Horváth', 'Kiss', 'Varga', 'Molnár', 'Németh', 'Farkas'];
+        } else if ($roll <= 85) {
+            $firstNames = ['James', 'David', 'Marco', 'Stefan', 'Hans', 'Pierre', 'Carlos', 'Francesco', 'Sergio', 'Anton'];
+            $lastNames = ['Smith', 'Müller', 'Rodriguez', 'Ferrari', 'Martinez', 'Dubois', 'Schmidt', 'Rossi', 'Jensen', 'Brown'];
+        } else {
+            $firstNames = ['Mohamed', 'Ali', 'Juan', 'Hiroshi', 'Kim', 'Andrei', 'Oscar', 'Jamal', 'Wei', 'Mateo'];
+            $lastNames = ['Silva', 'Santos', 'Tanaka', 'Park', 'Ivanov', 'Gonzalez', 'Lee', 'Nguyen', 'Zhang', 'Diallo'];
+        }
+
+        $firstName = $firstNames[array_rand($firstNames)];
+        $lastName = $lastNames[array_rand($lastNames)];
+
+        return "$firstName $lastName";
     }
 
     private function updateTeamRating(Team $team)

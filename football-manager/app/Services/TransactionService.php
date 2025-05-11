@@ -6,6 +6,7 @@ use App\Events\BidPlaced;
 use App\Models\Market;
 use App\Models\Player;
 use App\Models\Team;
+use DB;
 use Exception;
 use Illuminate\Support\Carbon;
 
@@ -60,6 +61,9 @@ class TransactionService
         return $marketInput;
     }
 
+    /**
+     * @throws \Throwable
+     */
     public function finalizeTransfer(int $marketId, int $teamId)
     {
         return DB::transaction(/**

@@ -20,6 +20,10 @@ class MatchSchedulerService
         $teams = Team::where('season_id', $season->getKey())->get();
         $teamCount = $teams->count();
 
+        if ($teamCount < 2) {
+            throw new Exception("Cannot generate fixtures, need at least 2 teams");
+        }
+
         if ($teamCount % 2 != 0) {
             throw new Exception("Cannot generate fixtures, need even number of teams");
         }
@@ -27,31 +31,82 @@ class MatchSchedulerService
         $fixtures = [];
         $teamIds = $teams->pluck('id')->toArray();
 
-        $roundCount = ($teamCount - 1) * 2;
+        $totalRounds = $teamCount - 1;
+        $matchesPerRound = $teamCount / 2;
+
+        $weekDistribution = $this->distributeRoundsToWeeks($totalRounds, 4);
+
         $startDate = Carbon::parse($season->start_date);
-        $endDate = Carbon::parse($season->end_date);
+        if ($startDate->isPast()) {
+            $startDate = now();
+        }
 
-        $matchDates = $this->calculateMatchDates($startDate, $endDate, $roundCount);
+        DB::transaction(function() use ($teamIds, $teamCount, $startDate, $weekDistribution, &$fixtures) {
+            $roundRobinFixtures = $this->generateRoundRobinFixtures($teamIds);
+            $currentRound = 0;
 
-        DB::transaction(function() use ($teamIds, $teamCount, $roundCount, $matchDates, &$fixtures) {
-            $firstHalfFixtures = $this->generateRoundRobinFixtures($teamIds);
+            for ($week = 0; $week < 4; $week++) {
+                $roundsThisWeek = $weekDistribution[$week] ?? 0;
 
-            for ($round = 0; $round < ($teamCount - 1); $round++) {
-                $matchDate = $matchDates[$round];
-                foreach ($firstHalfFixtures[$round] as $match) {
-                    $fixtures[] = $this->createMatch($match[0], $match[1], $matchDate);
-                }
-            }
+                if ($roundsThisWeek > 0) {
+                    $weekStartDate = (clone $startDate)->addWeeks($week);
+                    $weekEndDate = (clone $weekStartDate)->addDays(6);
+                    $matchDates = $this->calculateMatchDatesForWeek($weekStartDate, $weekEndDate, $roundsThisWeek);
 
-            for ($round = 0; $round < ($teamCount - 1); $round++) {
-                $matchDate = $matchDates[$round + $teamCount - 1];
-                foreach ($firstHalfFixtures[$round] as $match) {
-                    $fixtures[] = $this->createMatch($match[1], $match[0], $matchDate);
+                    for ($i = 0; $i < $roundsThisWeek && $currentRound < count($roundRobinFixtures); $i++) {
+                        $matchDate = $matchDates[$i];
+
+                        foreach ($roundRobinFixtures[$currentRound] as $match) {
+                            $fixtures[] = $this->createMatch($match[0], $match[1], $matchDate);
+                        }
+
+                        $currentRound++;
+                    }
                 }
             }
         });
 
         return $fixtures;
+    }
+
+    private function calculateMatchDatesForWeek(Carbon $weekStart, Carbon $weekEnd, int $matchCount): array
+    {
+        $matchDates = [];
+
+        if ($matchCount == 1) {
+            $weekend = (clone $weekStart)->addDays(rand(5, 6)); // Saturday or Sunday
+            $matchHour = rand(12, 20);
+            $matchDates[] = $weekend->setHour($matchHour)->setMinute(0)->setSecond(0);
+            return $matchDates;
+        }
+
+        $daysBetweenMatches = max(1, intval(7 / $matchCount));
+
+        $currentDate = clone $weekStart;
+        for ($i = 0; $i < $matchCount; $i++) {
+            $matchHour = rand(12, 20);
+            $matchDate = (clone $currentDate)->setHour($matchHour)->setMinute(0)->setSecond(0);
+            $matchDates[] = $matchDate;
+            $currentDate = $currentDate->addDays($daysBetweenMatches);
+
+            if ($currentDate->gt($weekEnd)) {
+                $currentDate = clone $weekEnd;
+            }
+        }
+
+        return $matchDates;
+    }
+
+    private function distributeRoundsToWeeks(int $totalRounds, int $totalWeeks): array
+    {
+        $distribution = array_fill(0, $totalWeeks, 0);
+
+        for ($i = 0; $i < $totalRounds; $i++) {
+            $week = $i % $totalWeeks;
+            $distribution[$week]++;
+        }
+
+        return $distribution;
     }
 
     private function generateRoundRobinFixtures(array $teamIds): array

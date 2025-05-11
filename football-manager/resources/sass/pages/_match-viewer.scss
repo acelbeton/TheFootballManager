@@ -305,18 +305,21 @@
 
             .stat-bars {
                 .stat-bar-container {
+                    position: relative;
                     height: 20px;
                     background-color: vars.$color-section-background;
                     margin-bottom: vars.$spacing-xs;
                     border-radius: vars.$border-radius-sm;
-                    position: relative !important;
+                    overflow: hidden;
 
                     .stat-bar {
                         height: 100%;
                         border-radius: vars.$border-radius-sm;
                         position: absolute !important;
+                        transition: width 1s ease-in-out;
                         left: 0 !important;
                         top: 0 !important;
+                        min-width: 1px;
 
                         &.home-bar {
                             background-color: vars.$color-primary;
@@ -385,7 +388,8 @@
 }
 
 .score-updated {
-    animation: scoreUpdate 1s ease;
+    animation: scoreUpdate 1.5s ease;
+    font-weight: vars.$font-weight-bold;
 }
 
 .commentary-item.GOAL {
@@ -527,5 +531,83 @@
         .match-score {
             margin: vars.$spacing-sm 0;
         }
+    }
+}
+
+.stat-value.changing {
+    animation: pulse-highlight 1s ease-in-out;
+}
+
+@keyframes pulse-highlight {
+    0% {
+        color: inherit;
+    }
+    50% {
+        color: vars.$color-primary;
+        font-weight: vars.$font-weight-bold;
+    }
+    100% {
+        color: inherit;
+    }
+}
+
+.goal-celebration-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(67, 97, 238, 0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 5rem;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    opacity: 0;
+    transform: scale(0.5);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    pointer-events: none;
+}
+
+.goal-celebration-overlay.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.goal-event-highlight {
+    animation: goalHighlight 3s ease-out;
+    border-left: 5px solid vars.$color-primary !important;
+    box-shadow: 0 0 15px rgba(vars.$color-primary, 0.3);
+}
+
+@keyframes goalHighlight {
+    0% { background-color: rgba(vars.$color-primary, 0.1); }
+    20% { background-color: rgba(vars.$color-primary, 0.5); }
+    100% { background-color: rgba(vars.$color-primary, 0.1); }
+}
+
+@keyframes scoreUpdate {
+    0% {
+        transform: scale(1);
+        color: inherit;
+    }
+    20% {
+        transform: scale(1.8);
+        color: vars.$color-primary;
+    }
+    40% {
+        transform: scale(1.6);
+        color: vars.$color-warning;
+    }
+    60% {
+        transform: scale(1.7);
+        color: vars.$color-primary;
+    }
+    100% {
+        transform: scale(1);
+        color: inherit;
     }
 }

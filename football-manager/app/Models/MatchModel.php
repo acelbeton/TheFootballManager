@@ -18,7 +18,13 @@ class MatchModel extends Model
         'away_team_id',
         'home_team_score',
         'away_team_score',
-        'match_date'
+        'match_date',
+        'home_possession',
+        'away_possession',
+        'home_shots',
+        'away_shots',
+        'home_shots_on_target',
+        'away_shots_on_target',
     ];
 
     protected $casts = [

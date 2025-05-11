@@ -191,15 +191,40 @@ class MatchViewer extends Component
         $this->isMatchLive = (strtoupper($status) === 'IN_PROGRESS');
         $this->status = $status;
 
+        $this->matchStats = [
+            'current_minute' => 0,
+            'home_score' => $this->match->home_team_score,
+            'away_score' => $this->match->away_team_score,
+            'home_possession' => $this->match->home_possession ?? 50,
+            'away_possession' => $this->match->away_possession ?? 50,
+            'home_shots' => $this->match->home_shots ?? 0,
+            'away_shots' => $this->match->away_shots ?? 0,
+            'home_shots_on_target' => $this->match->home_shots_on_target ?? 0,
+            'away_shots_on_target' => $this->match->away_shots_on_target ?? 0,
+        ];
+
         if ($status === 'IN_PROGRESS' || strtoupper($status) === 'COMPLETED' || $this->match->home_team_score > 0 || $this->match->away_team_score > 0) {
-            $this->matchStats['home_score'] = $this->match->home_team_score;
-            $this->matchStats['away_score'] = $this->match->away_team_score;
             $this->loadMatchEvents();
         }
 
         if (strtoupper($status) === 'IN_PROGRESS') {
             $matchState = $simulationService->getMatchState($this->match);
             $this->matchStats['current_minute'] = $matchState['current_minute'];
+
+            if (isset($matchState['home_team']['possession'])) {
+                $this->matchStats['home_possession'] = $matchState['home_team']['possession'];
+                $this->matchStats['away_possession'] = $matchState['away_team']['possession'];
+            }
+
+            if (isset($matchState['home_team']['shots'])) {
+                $this->matchStats['home_shots'] = $matchState['home_team']['shots'];
+                $this->matchStats['away_shots'] = $matchState['away_team']['shots'];
+            }
+
+            if (isset($matchState['home_team']['shots_on_target'])) {
+                $this->matchStats['home_shots_on_target'] = $matchState['home_team']['shots_on_target'];
+                $this->matchStats['away_shots_on_target'] = $matchState['away_team']['shots_on_target'];
+            }
         }
 
         $this->canStartMatch =
@@ -339,17 +364,34 @@ class MatchViewer extends Component
             }
         }
 
-        if ($update['type'] === 'MATCH_END' || $update['type'] === 'FINAL_SCORE_CONFIRMATION') {
-            $this->isMatchLive = false;
+        if ($update['type']) {
+            $simulationService = app(RealtimeMatchSimulationService::class);
 
-            if ($update['type'] === 'FINAL_SCORE_CONFIRMATION') {
+            if ($update['type'] === 'MATCH_START') {
+                $this->isMatchLive = true;
+                $this->status = 'IN_PROGRESS';
+                $this->dispatch('status_updated', [
+                    'isLive' => true,
+                    'status' => 'IN_PROGRESS'
+                ]);
+            }
+            else if ($update['type'] === 'MATCH_END' || $update['type'] === 'FINAL_SCORE_CONFIRMATION') {
+                $this->isMatchLive = false;
+                $this->status = 'COMPLETED';
+
+                $simulationService->updateMatchStatus($this->match, 'COMPLETED', 90);
+
+                $this->dispatch('status_updated', [
+                    'isLive' => false,
+                    'status' => 'COMPLETED'
+                ]);
+
                 $this->match->update([
                     'home_team_score' => $update['home_team']['score'],
                     'away_team_score' => $update['away_team']['score'],
                 ]);
+                $this->match->refresh();
             }
-
-            $this->match->refresh();
         }
     }
 

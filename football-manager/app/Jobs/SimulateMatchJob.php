@@ -25,7 +25,6 @@ class SimulateMatchJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     const EVENTS = [
-        'GOAL' => 10,
         'SHOT_ON_TARGET' => 25,
         'SHOT_OFF_TARGET' => 30,
         'CORNER' => 20,
@@ -39,10 +38,11 @@ class SimulateMatchJob implements ShouldQueue
         'SKILL_MOVE' => 10,
         'GOOD_PASS' => 20,
         'TACKLE' => 15,
+        'GOAL' => 70,
         'INTERCEPTION' => 12,
     ];
-    const MATCH_SPEED = 2;
-    const SIMULATION_CHUNK = 5;
+    const MATCH_SPEED = 1;
+    const SIMULATION_CHUNK = 10;
     const FATIGUE_START = 45;
     const FATIGUE_MAX = 0.3;
 
@@ -121,7 +121,7 @@ class SimulateMatchJob implements ShouldQueue
 
                 broadcast(new MatchStatusUpdate($payload));
 
-                sleep(2);
+                sleep(1);
             } else {
                 $this->initializeSimulation();
                 $this->currentMinute = $startMinute;
@@ -145,7 +145,7 @@ class SimulateMatchJob implements ShouldQueue
                         "Half time! The score is {$this->homeTeam->name} {$this->homeScore} - {$this->awayScore} {$this->awayTeam->name}");
                     $this->halftimeAdjustments();
 
-                    sleep(3);
+                    sleep(2);
                 } else {
                     usleep(self::MATCH_SPEED * 1000000);
                 }
@@ -159,7 +159,7 @@ class SimulateMatchJob implements ShouldQueue
             if ($this->currentMinute < 90) {
                 SimulateMatchJob::dispatch($this->matchId)
                     ->onQueue('match-simulation')
-                    ->delay(now()->addSeconds(5));
+                    ->delay(now()->addSeconds(2));
             } else {
                 $this->endMatch($simulationService);
             }
@@ -396,26 +396,75 @@ class SimulateMatchJob implements ShouldQueue
             $this->updatePlayerFatigue();
         }
 
+        $this->updatePossession();
         $this->broadcastMatchUpdate('TIME_UPDATE', null, null);
 
-        usleep(300000);
+        usleep(100000);
 
-        $eventChance = 20;
+        $eventChance = 25;
 
         if ($this->currentMinute >= 43 && $this->currentMinute <= 47) {
-            $eventChance = 40;
+            $eventChance = 45;
         } else if ($this->currentMinute >= 85) {
-            $eventChance = 35;
+            $eventChance = 45;
         }
 
         if ($this->currentMinute >= 80 && $this->homeScore == $this->awayScore) {
-            $eventChance += 10;
+            $eventChance += 15;
         }
 
         $attackingTeam = (rand(1, 100) <= $this->homePossession) ? 'home' : 'away';
 
         if (rand(1, 100) <= $eventChance) {
             $this->generateEvent($attackingTeam);
+        }
+    }
+
+    private function updatePossession(): void
+    {
+        $maxChange = 2;
+        $homeAdvantage = 0;
+        $homeAdvantage += 1;
+
+        if ($this->homeTeam->current_tactic === 'POSSESSION_MODE') {
+            $homeAdvantage += 2;
+        } elseif ($this->homeTeam->current_tactic === 'ATTACK_MODE') {
+            $homeAdvantage += 1;
+        } elseif ($this->homeTeam->current_tactic === 'DEFEND_MODE') {
+            $homeAdvantage -= 2;
+        }
+
+        if ($this->awayTeam->current_tactic === 'POSSESSION_MODE') {
+            $homeAdvantage -= 2;
+        } elseif ($this->awayTeam->current_tactic === 'ATTACK_MODE') {
+            $homeAdvantage -= 1;
+        } elseif ($this->awayTeam->current_tactic === 'DEFEND_MODE') {
+            $homeAdvantage += 2;
+        }
+
+        $scoreDifference = $this->homeScore - $this->awayScore;
+        if ($scoreDifference > 0) {
+            $homeAdvantage -= min(3, $scoreDifference);
+        } elseif ($scoreDifference < 0) {
+            $homeAdvantage += min(3, abs($scoreDifference));
+        }
+
+        $randomFactor = rand(-$maxChange, $maxChange);
+
+        $possessionChange = $homeAdvantage + $randomFactor;
+
+        $this->homePossession += $possessionChange;
+
+        $this->homePossession = max(30, min(70, $this->homePossession));
+        $this->awayPossession = 100 - $this->homePossession;
+
+        if (abs($possessionChange) > 2) {
+            Log::debug("Significant possession change: {$possessionChange}%", [
+                'match_id' => $this->match->getKey(),
+                'minute' => $this->currentMinute,
+                'home_possession' => $this->homePossession,
+                'away_possession' => $this->awayPossession,
+            ]);
         }
     }
 
@@ -622,7 +671,7 @@ class SimulateMatchJob implements ShouldQueue
                 $shotPower = $stats['attacking'] * (1 - $this->playerFatigue[$attackingPlayer->getKey()]);
                 $saveQuality = $defenderStats['defending'] * (1 - $this->playerFatigue[$defendingPlayer->getKey()]);
 
-                if ($shotPower > $saveQuality + 20) {
+                if ($shotPower > $saveQuality + 15) {
                     if ($attackingTeam === 'home') {
                         $this->homeScore++;
                     } else {
@@ -696,19 +745,15 @@ class SimulateMatchJob implements ShouldQueue
             ($attackerStats['speed'] * 0.1);
 
         $attackRating *= (1 - $this->playerFatigue[$attacker->getKey()]);
-
-        $baseChance = $attackRating / 2;
-
+        $baseChance = $attackRating / 1.3;
         $defenseRating = $defenderStats['defending'];
-
         $defenseRating *= (1 - $this->playerFatigue[$defender->getKey()]);
-
-        $defenderImpact = $defenseRating * 0.4;
+        $defenderImpact = $defenseRating * 0.3;
 
         $tacticalModifier = 0;
         if ($attackingTeam === 'home') {
             if ($this->homeTeam->current_tactic === 'ATTACK_MODE') {
-                $tacticalModifier += 10;
+                $tacticalModifier += 15;
             } elseif ($this->homeTeam->current_tactic === 'DEFEND_MODE') {
                 $tacticalModifier -= 10;
             }
@@ -718,7 +763,7 @@ class SimulateMatchJob implements ShouldQueue
             }
         } else {
             if ($this->awayTeam->current_tactic === 'ATTACK_MODE') {
-                $tacticalModifier += 10;
+                $tacticalModifier += 15;
             } elseif ($this->awayTeam->current_tactic === 'DEFEND_MODE') {
                 $tacticalModifier -= 10;
             }
@@ -728,9 +773,29 @@ class SimulateMatchJob implements ShouldQueue
             }
         }
 
-        $homeAdvantage = ($attackingTeam === 'home') ? 5 : 0;
+        $homeAdvantage = ($attackingTeam === 'home') ? 8 : 0;
 
-        $finalChance = max(5, min(80, $baseChance - $defenderImpact + $tacticalModifier + $homeAdvantage));
+        $scoreDifference = ($attackingTeam === 'home') ?
+            ($this->awayScore - $this->homeScore) :
+            ($this->homeScore - $this->awayScore);
+
+        $comebackModifier = max(0, min(15, $scoreDifference * 5)); // Up to +15% boost when trailing
+
+        $finalChance = max(10, min(85, $baseChance - $defenderImpact + $tacticalModifier + $homeAdvantage + $comebackModifier)); // Increased min from 5 to 10, max from 80 to 85
+
+        if ($this->currentMinute >= 85 || ($this->homeScore == $this->awayScore && $this->currentMinute >= 75)) {
+            Log::debug("Goal attempt calculation", [
+                'minute' => $this->currentMinute,
+                'team' => $attackingTeam,
+                'player' => $attacker->name,
+                'baseChance' => $baseChance,
+                'defenderImpact' => $defenderImpact,
+                'tacticalModifier' => $tacticalModifier,
+                'homeAdvantage' => $homeAdvantage,
+                'comebackModifier' => $comebackModifier,
+                'finalChance' => $finalChance
+            ]);
+        }
 
         return rand(1, 100) <= $finalChance;
     }
@@ -990,7 +1055,7 @@ class SimulateMatchJob implements ShouldQueue
 
         broadcast(new MatchStatusUpdate($payload));
 
-        usleep(200000);
+        usleep(50000);
     }
 
     private function endMatch(RealtimeMatchSimulationService $simulationService): void
@@ -998,13 +1063,15 @@ class SimulateMatchJob implements ShouldQueue
         $this->match->update([
             'home_team_score' => $this->homeScore,
             'away_team_score' => $this->awayScore,
+            'home_possession' => $this->homePossession,
+            'away_possession' => $this->awayPossession,
+            'home_shots' => $this->homeShots,
+            'away_shots' => $this->awayShots,
+            'home_shots_on_target' => $this->homeShotsOnTarget,
+            'away_shots_on_target' => $this->awayShotsOnTarget,
         ]);
 
         $this->match->refresh();
-
-        if ($this->match->home_team_score !== $this->homeScore || $this->match->away_team_score !== $this->awayScore) {
-            $simulationService->updateMatchScore($this->match, $this->homeScore, $this->awayScore);
-        }
 
         $this->recordPlayerPerformances();
         $this->updateStandings();
@@ -1017,25 +1084,36 @@ class SimulateMatchJob implements ShouldQueue
             "Full time! The match ends {$this->homeTeam->name} {$this->homeScore} - {$this->awayScore} {$this->awayTeam->name}"
         );
 
-        $finalScoreUpdate = [
+        $finalStatsUpdate = [
             'match_id' => $this->match->getKey(),
-            'type' => 'FINAL_SCORE_CONFIRMATION',
+            'type' => 'FINAL_STATS_CONFIRMATION',
             'current_minute' => 90,
             'home_team' => [
                 'id' => $this->homeTeam->getKey(),
                 'name' => $this->homeTeam->name,
                 'score' => $this->match->home_team_score,
+                'possession' => $this->homePossession,
+                'shots' => $this->homeShots,
+                'shots_on_target' => $this->homeShotsOnTarget,
             ],
             'away_team' => [
                 'id' => $this->awayTeam->getKey(),
                 'name' => $this->awayTeam->name,
                 'score' => $this->match->away_team_score,
+                'possession' => $this->awayPossession,
+                'shots' => $this->awayShots,
+                'shots_on_target' => $this->awayShotsOnTarget,
             ],
         ];
 
-        broadcast(new MatchStatusUpdate($finalScoreUpdate));
+        broadcast(new MatchStatusUpdate($finalStatsUpdate));
 
-        Log::info("Match {$this->match->getKey()} completed. Final score: {$this->homeScore} - {$this->awayScore}");
+        Log::info("Match {$this->match->getKey()} completed. Final stats saved.", [
+            'score' => "{$this->homeScore} - {$this->awayScore}",
+            'possession' => "{$this->homePossession}% - {$this->awayPossession}%",
+            'shots' => "{$this->homeShots} - {$this->awayShots}",
+            'shots_on_target' => "{$this->homeShotsOnTarget} - {$this->awayShotsOnTarget}",
+        ]);
     }
 
     public function failed(Throwable $exception)
