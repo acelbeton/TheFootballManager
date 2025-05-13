@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Events\MatchStatusUpdate;
+use App\Models\LineupPlayer;
 use App\Models\MatchEvent;
 use App\Models\MatchModel;
 use App\Models\MatchSimulationStatus;
@@ -10,6 +11,7 @@ use App\Models\Player;
 use App\Models\PlayerPerformance;
 use App\Models\Standing;
 use App\Models\Team;
+use App\Models\TeamLineup;
 use App\Services\RealtimeMatchSimulationService;
 use Exception;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -25,24 +27,17 @@ class SimulateMatchJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     const EVENTS = [
-        'SHOT_ON_TARGET' => 25,
-        'SHOT_OFF_TARGET' => 30,
-        'CORNER' => 20,
-        'FREE_KICK' => 15,
-        'YELLOW_CARD' => 8,
-        'RED_CARD' => 2,
-        'INJURY' => 5,
-        'SUBSTITUTION' => 10,
-        'GREAT_SAVE' => 15,
-        'OFFSIDE' => 12,
-        'SKILL_MOVE' => 10,
-        'GOOD_PASS' => 20,
-        'TACKLE' => 15,
-        'GOAL' => 70,
-        'INTERCEPTION' => 12,
+        'SHOT_ON_TARGET' => 30,
+        'SHOT_OFF_TARGET' => 25,
+        'CORNER' => 15,
+        'YELLOW_CARD' => 5,
+        'RED_CARD' => 1,
+        'GOAL' => 40,
+        'SAVE' => 10,
+        'TACKLE' => 5
     ];
     const MATCH_SPEED = 1;
-    const SIMULATION_CHUNK = 10;
+    const SIMULATION_CHUNK = 15;
     const FATIGUE_START = 45;
     const FATIGUE_MAX = 0.3;
 
@@ -66,16 +61,12 @@ class SimulateMatchJob implements ShouldQueue
     protected $playerFatigue = [];
     protected $matchId;
 
-    /**
-     * Create a new job instance.
-     */
     public function __construct(int $matchId)
     {
         $this->matchId = $matchId;
     }
 
     /**
-     * Execute the job.
      * @throws Exception
      */
     public function handle(RealtimeMatchSimulationService $simulationService): void
@@ -143,7 +134,6 @@ class SimulateMatchJob implements ShouldQueue
                 if ($this->currentMinute == 45) {
                     $this->broadcastMatchUpdate('HALF_TIME', null,
                         "Half time! The score is {$this->homeTeam->name} {$this->homeScore} - {$this->awayScore} {$this->awayTeam->name}");
-                    $this->halftimeAdjustments();
 
                     sleep(2);
                 } else {
@@ -225,17 +215,67 @@ class SimulateMatchJob implements ShouldQueue
         }
     }
 
+    /**
+     * @throws Exception
+     */
     private function loadPlayerStats(): void
     {
-        $this->homePlayers = Player::where('team_id', $this->homeTeam->getKey())
+        $homeLineup = TeamLineup::where('team_id', $this->homeTeam->getKey())
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        $awayLineup = TeamLineup::where('team_id', $this->awayTeam->getKey())
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (!$homeLineup || !$awayLineup) {
+            Log::error("Could not find lineups for match {$this->matchId}");
+            throw new Exception("Missing lineup data for match simulation");
+        }
+
+        $homeStarterIds = LineupPlayer::where('lineup_id', $homeLineup->getKey())
+            ->where('is_starter', 1)
+            ->pluck('player_id')
+            ->toArray();
+
+        $awayStarterIds = LineupPlayer::where('lineup_id', $awayLineup->getKey())
+            ->where('is_starter', 1)
+            ->pluck('player_id')
+            ->toArray();
+
+        $this->homePlayers = Player::whereIn('id', $homeStarterIds)
             ->where('is_injured', false)
             ->with('statistics')
             ->get();
 
-        $this->awayPlayers = Player::where('team_id', $this->awayTeam->getKey())
+        $this->awayPlayers = Player::whereIn('id', $awayStarterIds)
             ->where('is_injured', false)
             ->with('statistics')
             ->get();
+
+        if ($this->homePlayers->count() < 11) {
+            $additionalHomePlayers = Player::where('team_id', $this->homeTeam->getKey())
+                ->where('is_injured', false)
+                ->whereNotIn('id', $homeStarterIds)
+                ->with('statistics')
+                ->limit(11 - $this->homePlayers->count())
+                ->get();
+
+            $this->homePlayers = $this->homePlayers->merge($additionalHomePlayers);
+            Log::warning("Had to add bench players to home team for match {$this->matchId}");
+        }
+
+        if ($this->awayPlayers->count() < 11) {
+            $additionalAwayPlayers = Player::where('team_id', $this->awayTeam->getKey())
+                ->where('is_injured', false)
+                ->whereNotIn('id', $awayStarterIds)
+                ->with('statistics')
+                ->limit(11 - $this->awayPlayers->count())
+                ->get();
+
+            $this->awayPlayers = $this->awayPlayers->merge($additionalAwayPlayers);
+            Log::warning("Had to add bench players to away team for match {$this->matchId}");
+        }
 
         foreach ($this->homePlayers as $player) {
             $stats = $player->statistics;
@@ -285,62 +325,57 @@ class SimulateMatchJob implements ShouldQueue
 
     private function calculateInitialPossession(): void
     {
-        $homeMidfielders = $this->homePlayers->where('position', 'MIDFIELDER');
-        $awayMidfielders = $this->awayPlayers->where('position', 'MIDFIELDER');
+        $homeTeamRating = 0;
+        $awayTeamRating = 0;
 
-        $homeMidfieldRating = 0;
-        foreach ($homeMidfielders as $player) {
+        foreach ($this->homePlayers as $player) {
             $stats = $this->homePlayerStats[$player->getKey()] ?? null;
             if ($stats) {
-                $homeMidfieldRating += ($stats['technical_skills'] * 0.4) +
-                    ($stats['tactical_sense'] * 0.3) +
-                    ($stats['stamina'] * 0.2) +
-                    ($stats['speed'] * 0.1);
+                $homeTeamRating += ($stats['technical_skills'] + $stats['tactical_sense']) / 2;
             }
         }
 
-        $awayMidfieldRating = 0;
-        foreach ($awayMidfielders as $player) {
+        foreach ($this->awayPlayers as $player) {
             $stats = $this->awayPlayerStats[$player->getKey()] ?? null;
             if ($stats) {
-                $awayMidfieldRating += ($stats['technical_skills'] * 0.4) +
-                    ($stats['tactical_sense'] * 0.3) +
-                    ($stats['stamina'] * 0.2) +
-                    ($stats['speed'] * 0.1);
+                $awayTeamRating += ($stats['technical_skills'] + $stats['tactical_sense']) / 2;
             }
         }
 
-        $homeMidfieldRating *= 1.05;
+        $homeTeamRating *= 1.1;
 
-        $totalRating = $homeMidfieldRating + $awayMidfieldRating;
+        $totalRating = $homeTeamRating + $awayTeamRating;
         if ($totalRating > 0) {
-            $this->homePossession = round(($homeMidfieldRating / $totalRating) * 100);
-            $this->awayPossession = 100 - $this->homePossession;
+            $this->homePossession = round(($homeTeamRating / $totalRating) * 100);
         } else {
-            $this->homePossession = 50;
-            $this->awayPossession = 50;
+            $this->homePossession = 55;
         }
 
-        if ($this->homeTeam->current_tactic === 'POSSESSION_MODE') {
-            $this->homePossession += 10;
-            $this->awayPossession -= 10;
-        } elseif ($this->awayTeam->current_tactic === 'POSSESSION_MODE') {
-            $this->awayPossession += 10;
+        if ($this->homeTeam->current_tactic === 'ATTACK_MODE') {
+            $this->homePossession += 5;
+        } elseif ($this->homeTeam->current_tactic === 'DEFEND_MODE') {
             $this->homePossession -= 10;
         }
 
-        $this->homePossession = max(30, min(70, $this->homePossession));
+        if ($this->awayTeam->current_tactic === 'ATTACK_MODE') {
+            $this->homePossession -= 5;
+        } elseif ($this->awayTeam->current_tactic === 'DEFEND_MODE') {
+            $this->homePossession += 5;
+        }
+
+        $this->homePossession = max(30, min(65, $this->homePossession));
         $this->awayPossession = 100 - $this->homePossession;
     }
 
-    private function updatePlayerFatigue()
+    private function updatePlayerFatigue(): void
     {
         foreach ($this->homePlayers as $player) {
             $stats = $this->homePlayerStats[$player->getKey()] ?? null;
             if ($stats) {
-                $fatigueRate = (100 - $stats['stamina']) / 1000;
-                $this->playerFatigue[$player->getKey()] += $fatigueRate * (($this->currentMinute - self::FATIGUE_START) / 10);
+                $fatigueRate = 0.5 - ($stats['stamina'] / 200);
+                $minuteFactor = ($this->currentMinute / 90) * 0.6;
 
+                $this->playerFatigue[$player->getKey()] += $fatigueRate * $minuteFactor;
                 $this->playerFatigue[$player->getKey()] = min(self::FATIGUE_MAX, $this->playerFatigue[$player->getKey()]);
             }
         }
@@ -348,44 +383,11 @@ class SimulateMatchJob implements ShouldQueue
         foreach ($this->awayPlayers as $player) {
             $stats = $this->awayPlayerStats[$player->getKey()] ?? null;
             if ($stats) {
-                $fatigueRate = (100 - $stats['stamina']) / 1000;
-                $this->playerFatigue[$player->getKey()] += $fatigueRate * (($this->currentMinute - self::FATIGUE_START) / 10);
+                $fatigueRate = 0.5 - ($stats['stamina'] / 200);
+                $minuteFactor = ($this->currentMinute / 90) * 0.6;
+
+                $this->playerFatigue[$player->getKey()] += $fatigueRate * $minuteFactor;
                 $this->playerFatigue[$player->getKey()] = min(self::FATIGUE_MAX, $this->playerFatigue[$player->getKey()]);
-            }
-        }
-    }
-
-    private function halftimeAdjustments(): void
-    {
-        if ($this->homeTeam->user_id === null) {
-            if ($this->homeScore < $this->awayScore - 1) {
-                $this->homeTeam->current_tactic = 'ATTACK_MODE';
-                $this->homeTeam->save();
-
-                $this->broadcastMatchUpdate('TACTICAL_CHANGE', null,
-                    "{$this->homeTeam->name} switches to an attacking formation for the second half!");
-            } elseif ($this->homeScore > $this->awayScore + 1) {
-                $this->homeTeam->current_tactic = 'DEFEND_MODE';
-                $this->homeTeam->save();
-
-                $this->broadcastMatchUpdate('TACTICAL_CHANGE', null,
-                    "{$this->homeTeam->name} adopts a more defensive approach for the second half!");
-            }
-        }
-
-        if ($this->awayTeam->user_id === null) {
-            if ($this->awayScore < $this->homeScore - 1) {
-                $this->awayTeam->current_tactic = 'ATTACK_MODE';
-                $this->awayTeam->save();
-
-                $this->broadcastMatchUpdate('TACTICAL_CHANGE', null,
-                    "{$this->awayTeam->name} switches to an attacking formation for the second half!");
-            } elseif ($this->awayScore > $this->homeScore + 1) {
-                $this->awayTeam->current_tactic = 'DEFEND_MODE';
-                $this->awayTeam->save();
-
-                $this->broadcastMatchUpdate('TACTICAL_CHANGE', null,
-                    "{$this->awayTeam->name} adopts a more defensive approach for the second half!");
             }
         }
     }
@@ -426,21 +428,17 @@ class SimulateMatchJob implements ShouldQueue
         $homeAdvantage = 0;
         $homeAdvantage += 1;
 
-        if ($this->homeTeam->current_tactic === 'POSSESSION_MODE') {
-            $homeAdvantage += 2;
-        } elseif ($this->homeTeam->current_tactic === 'ATTACK_MODE') {
+        if ($this->homeTeam->current_tactic === 'ATTACK_MODE') {
             $homeAdvantage += 1;
         } elseif ($this->homeTeam->current_tactic === 'DEFEND_MODE') {
             $homeAdvantage -= 2;
         }
 
-        if ($this->awayTeam->current_tactic === 'POSSESSION_MODE') {
-            $homeAdvantage -= 2;
-        } elseif ($this->awayTeam->current_tactic === 'ATTACK_MODE') {
+       if ($this->awayTeam->current_tactic === 'ATTACK_MODE') {
             $homeAdvantage -= 1;
-        } elseif ($this->awayTeam->current_tactic === 'DEFEND_MODE') {
+       } elseif ($this->awayTeam->current_tactic === 'DEFEND_MODE') {
             $homeAdvantage += 2;
-        }
+       }
 
         $scoreDifference = $this->homeScore - $this->awayScore;
         if ($scoreDifference > 0) {
@@ -472,27 +470,57 @@ class SimulateMatchJob implements ShouldQueue
     {
         $eventType = $this->selectRandomEvent();
 
-        $attacker = ($attackingTeam === 'home') ? $this->homeTeam : $this->awayTeam;
-        $defender = ($attackingTeam === 'home') ? $this->awayTeam : $this->homeTeam;
-
         $attackingPlayer = $this->getPlayerForAction($attackingTeam, $eventType);
         $defendingPlayer = $this->getDefendingPlayer($attackingTeam === 'home' ? 'away' : 'home', $eventType);
-        $secondAttacker = $this->getPlayerForAction($attackingTeam, 'ASSIST', [$attackingPlayer->getKey()]);
+
+        if (!$attackingPlayer || !$defendingPlayer) {
+            return;
+        }
+
+        $secondAttacker = null;
+        if ($eventType === 'GOAL' && rand(1, 100) <= 70) {
+            $secondAttacker = $this->getPlayerForAction($attackingTeam, 'ASSIST', [$attackingPlayer->getKey()]);
+        }
 
         switch ($eventType) {
             case 'GOAL':
-                if ($this->attemptGoal($attackingTeam, $attackingPlayer, $defendingPlayer)) {
+                $scoreChance = 50;
+
+                if ($attackingTeam === 'home' && $this->homeTeam->current_tactic === 'ATTACK_MODE') {
+                    $scoreChance += 10;
+                } elseif ($attackingTeam === 'away' && $this->awayTeam->current_tactic === 'ATTACK_MODE') {
+                    $scoreChance += 10;
+                }
+
+                $attackerStats = $attackingTeam === 'home' ?
+                    $this->homePlayerStats[$attackingPlayer->getKey()] :
+                    $this->awayPlayerStats[$attackingPlayer->getKey()];
+
+                $defenderStats = $attackingTeam === 'home' ?
+                    $this->awayPlayerStats[$defendingPlayer->getKey()] :
+                    $this->homePlayerStats[$defendingPlayer->getKey()];
+
+                $scoreChance += ($attackerStats['attacking'] - $defenderStats['defending']) / 5;
+
+                if ($attackingTeam === 'home') {
+                    $scoreChance += 5;
+                }
+
+                if (($attackingTeam === 'home' && $this->homeScore < $this->awayScore) ||
+                    ($attackingTeam === 'away' && $this->awayScore < $this->homeScore)) {
+                    $scoreChance += 10;
+                }
+
+                $scoreChance = max(20, min(80, $scoreChance));
+
+                if (rand(1, 100) <= $scoreChance) {
                     if ($attackingTeam === 'home') {
                         $this->homeScore++;
                     } else {
                         $this->awayScore++;
                     }
 
-                    $commentary = $this->generateGoalCommentary(
-                        $attackingPlayer,
-                        $secondAttacker,
-                        $defendingPlayer
-                    );
+                    $commentary = $this->generateGoalCommentary($attackingPlayer, $secondAttacker, $defendingPlayer);
 
                     $this->recordEvent(
                         'GOAL',
@@ -502,16 +530,13 @@ class SimulateMatchJob implements ShouldQueue
                         $commentary
                     );
                 } else {
-                    $commentary = $this->generateSavedShotCommentary(
-                        $attackingPlayer,
-                        $defendingPlayer
-                    );
+                    $commentary = "Shot by {$attackingPlayer->name}, but it's saved by {$defendingPlayer->name}.";
 
                     $this->recordEvent(
-                        'SHOT_SAVED',
-                        $attackingTeam,
+                        'SAVE',
+                        $attackingTeam === 'home' ? 'away' : 'home',
+                        $defendingPlayer,
                         $attackingPlayer,
-                        null,
                         $commentary
                     );
                 }
@@ -526,10 +551,7 @@ class SimulateMatchJob implements ShouldQueue
                     $this->awayShotsOnTarget++;
                 }
 
-                $commentary = $this->generateShotOnTargetCommentary(
-                    $attackingPlayer,
-                    $defendingPlayer
-                );
+                $commentary = "{$attackingPlayer->name} fires a shot on target, but {$defendingPlayer->name} makes the save.";
 
                 $this->recordEvent(
                     'SHOT_ON_TARGET',
@@ -547,9 +569,7 @@ class SimulateMatchJob implements ShouldQueue
                     $this->awayShots++;
                 }
 
-                $commentary = $this->generateShotOffTargetCommentary(
-                    $attackingPlayer
-                );
+                $commentary = "{$attackingPlayer->name} tries to shoot but it goes wide of the goal.";
 
                 $this->recordEvent(
                     'SHOT_OFF_TARGET',
@@ -558,76 +578,6 @@ class SimulateMatchJob implements ShouldQueue
                     null,
                     $commentary
                 );
-                break;
-
-            case 'SKILL_MOVE':
-                $stats = $attackingTeam === 'home' ?
-                    $this->homePlayerStats[$attackingPlayer->getKey()] :
-                    $this->awayPlayerStats[$attackingPlayer->getKey()];
-
-                $defenderStats = $attackingTeam === 'home' ?
-                    $this->awayPlayerStats[$defendingPlayer->getKey()] :
-                    $this->homePlayerStats[$defendingPlayer->getKey()];
-
-                $success = $this->calculateSkillMoveSuccess($stats, $defenderStats);
-
-                if ($success) {
-                    $commentary = "{$attackingPlayer->name} shows brilliant skill to beat {$defendingPlayer->name}!";
-                } else {
-                    $commentary = "{$attackingPlayer->name} tries to take on {$defendingPlayer->name}, but loses possession.";
-                }
-
-                $this->recordEvent(
-                    'SKILL_MOVE',
-                    $attackingTeam,
-                    $attackingPlayer,
-                    $defendingPlayer,
-                    $commentary
-                );
-
-                if ($success && rand(1, 100) <= 40) {
-                    $this->generateEvent($attackingTeam);
-                }
-                break;
-
-            case 'TACKLE':
-                $defenderStats = $attackingTeam === 'home' ?
-                    $this->awayPlayerStats[$defendingPlayer->getKey()] :
-                    $this->homePlayerStats[$defendingPlayer->getKey()];
-
-                $defenseRating = $defenderStats['defending'];
-                $tackleSuccess = rand(1, 100) <= $defenseRating;
-
-                if ($tackleSuccess) {
-                    $commentary = "Excellent tackle by {$defendingPlayer->name} to win back possession!";
-
-                    $this->recordEvent(
-                        'TACKLE',
-                        $attackingTeam === 'home' ? 'away' : 'home',
-                        $defendingPlayer,
-                        $attackingPlayer,
-                        $commentary
-                    );
-
-                    if (rand(1, 100) <= 15) {
-                        $this->recordEvent(
-                            'YELLOW_CARD',
-                            $attackingTeam === 'home' ? 'away' : 'home',
-                            $defendingPlayer,
-                            $attackingPlayer,
-                            "Yellow card! {$defendingPlayer->name} went in too hard on that tackle against {$attackingPlayer->name}."
-                        );
-                    }
-                } else {
-                    $commentary = "{$defendingPlayer->name} attempts a tackle but {$attackingPlayer->name} evades it.";
-                    $this->recordEvent(
-                        'TACKLE_MISSED',
-                        $attackingTeam === 'home' ? 'away' : 'home',
-                        $defendingPlayer,
-                        $attackingPlayer,
-                        $commentary
-                    );
-                }
                 break;
 
             case 'CORNER':
@@ -648,344 +598,208 @@ class SimulateMatchJob implements ShouldQueue
                 break;
 
             case 'YELLOW_CARD':
-                $commentary = "Yellow card! {$defendingPlayer->name} makes a reckless challenge on {$attackingPlayer->name}.";
+                $commentary = "Yellow card! {$attackingPlayer->name} commits a foul on {$defendingPlayer->name}.";
 
                 $this->recordEvent(
                     'YELLOW_CARD',
-                    ($attackingTeam === 'home' ? 'away' : 'home'),
+                    $attackingTeam,
+                    $attackingPlayer,
+                    $defendingPlayer,
+                    $commentary
+                );
+                break;
+
+            case 'RED_CARD':
+                $commentary = "RED CARD! {$attackingPlayer->name} is sent off for a serious foul on {$defendingPlayer->name}.";
+
+                $this->recordEvent(
+                    'RED_CARD',
+                    $attackingTeam,
+                    $attackingPlayer,
+                    $defendingPlayer,
+                    $commentary
+                );
+                break;
+
+            case 'SAVE':
+                $commentary = "Great save by {$defendingPlayer->name} to deny {$attackingPlayer->name}!";
+
+                $this->recordEvent(
+                    'SAVE',
+                    $attackingTeam === 'home' ? 'away' : 'home',
                     $defendingPlayer,
                     $attackingPlayer,
                     $commentary
                 );
                 break;
 
-            case 'GREAT_SAVE':
-                $stats = $attackingTeam === 'home' ?
-                    $this->homePlayerStats[$attackingPlayer->getKey()] :
-                    $this->awayPlayerStats[$attackingPlayer->getKey()];
-
-                $defenderStats = $attackingTeam === 'home' ?
-                    $this->awayPlayerStats[$defendingPlayer->getKey()] :
-                    $this->homePlayerStats[$defendingPlayer->getKey()];
-
-                $shotPower = $stats['attacking'] * (1 - $this->playerFatigue[$attackingPlayer->getKey()]);
-                $saveQuality = $defenderStats['defending'] * (1 - $this->playerFatigue[$defendingPlayer->getKey()]);
-
-                if ($shotPower > $saveQuality + 15) {
-                    if ($attackingTeam === 'home') {
-                        $this->homeScore++;
-                    } else {
-                        $this->awayScore++;
-                    }
-
-                    $commentary = "GOAL! What a powerful strike from {$attackingPlayer->name}! {$defendingPlayer->name} got a hand to it but couldn't keep it out!";
-
-                    $this->recordEvent(
-                        'GOAL',
-                        $attackingTeam,
-                        $attackingPlayer,
-                        null,
-                        $commentary
-                    );
-                } else {
-                    $commentary = "What a save! {$defendingPlayer->name} makes a brilliant stop to deny {$attackingPlayer->name}.";
-
-                    $this->recordEvent(
-                        'GREAT_SAVE',
-                        ($attackingTeam === 'home' ? 'away' : 'home'),
-                        $defendingPlayer,
-                        $attackingPlayer,
-                        $commentary
-                    );
-                }
-                break;
-
-            default:
-                $commentary = "{$attackingPlayer->name} makes a move forward for " .
-                    ($attackingTeam === 'home' ? $this->homeTeam->name : $this->awayTeam->name) . ".";
+            case 'TACKLE':
+                $commentary = "{$defendingPlayer->name} makes a clean tackle to win the ball from {$attackingPlayer->name}.";
 
                 $this->recordEvent(
-                    'GENERIC',
-                    $attackingTeam,
+                    'TACKLE',
+                    $attackingTeam === 'home' ? 'away' : 'home',
+                    $defendingPlayer,
                     $attackingPlayer,
-                    null,
                     $commentary
                 );
                 break;
         }
     }
 
-    private function calculateSkillMoveSuccess(array $attackerStats, array $defenderStats): bool
-    {
-        $attackerRating = $attackerStats['technical_skills'] * 0.6 + $attackerStats['speed'] * 0.4;
-        $defenderRating = $defenderStats['defending'] * 0.6 + $defenderStats['speed'] * 0.4;
-
-        $attackerRating *= (1 - $this->playerFatigue[$attackerStats['id']]);
-        $defenderRating *= (1 - $this->playerFatigue[$defenderStats['id']]);
-
-        $successChance = 50 + ($attackerRating - $defenderRating) / 2;
-
-        $successChance = max(10, min(90, $successChance));
-
-        return rand(1, 100) <= $successChance;
-    }
-
-    private function attemptGoal(string $attackingTeam, Player $attacker, Player $defender): bool
-    {
-        $attackerStats = $attackingTeam === 'home' ?
-            $this->homePlayerStats[$attacker->getKey()] :
-            $this->awayPlayerStats[$attacker->getKey()];
-
-        $defenderStats = $attackingTeam === 'home' ?
-            $this->awayPlayerStats[$defender->getKey()] :
-            $this->homePlayerStats[$defender->getKey()];
-
-        $attackRating = ($attackerStats['attacking'] * 0.6) +
-            ($attackerStats['technical_skills'] * 0.3) +
-            ($attackerStats['speed'] * 0.1);
-
-        $attackRating *= (1 - $this->playerFatigue[$attacker->getKey()]);
-        $baseChance = $attackRating / 1.3;
-        $defenseRating = $defenderStats['defending'];
-        $defenseRating *= (1 - $this->playerFatigue[$defender->getKey()]);
-        $defenderImpact = $defenseRating * 0.3;
-
-        $tacticalModifier = 0;
-        if ($attackingTeam === 'home') {
-            if ($this->homeTeam->current_tactic === 'ATTACK_MODE') {
-                $tacticalModifier += 15;
-            } elseif ($this->homeTeam->current_tactic === 'DEFEND_MODE') {
-                $tacticalModifier -= 10;
-            }
-
-            if ($this->awayTeam->current_tactic === 'DEFEND_MODE') {
-                $tacticalModifier -= 5;
-            }
-        } else {
-            if ($this->awayTeam->current_tactic === 'ATTACK_MODE') {
-                $tacticalModifier += 15;
-            } elseif ($this->awayTeam->current_tactic === 'DEFEND_MODE') {
-                $tacticalModifier -= 10;
-            }
-
-            if ($this->homeTeam->current_tactic === 'DEFEND_MODE') {
-                $tacticalModifier -= 5;
-            }
-        }
-
-        $homeAdvantage = ($attackingTeam === 'home') ? 8 : 0;
-
-        $scoreDifference = ($attackingTeam === 'home') ?
-            ($this->awayScore - $this->homeScore) :
-            ($this->homeScore - $this->awayScore);
-
-        $comebackModifier = max(0, min(15, $scoreDifference * 5)); // Up to +15% boost when trailing
-
-        $finalChance = max(10, min(85, $baseChance - $defenderImpact + $tacticalModifier + $homeAdvantage + $comebackModifier)); // Increased min from 5 to 10, max from 80 to 85
-
-        if ($this->currentMinute >= 85 || ($this->homeScore == $this->awayScore && $this->currentMinute >= 75)) {
-            Log::debug("Goal attempt calculation", [
-                'minute' => $this->currentMinute,
-                'team' => $attackingTeam,
-                'player' => $attacker->name,
-                'baseChance' => $baseChance,
-                'defenderImpact' => $defenderImpact,
-                'tacticalModifier' => $tacticalModifier,
-                'homeAdvantage' => $homeAdvantage,
-                'comebackModifier' => $comebackModifier,
-                'finalChance' => $finalChance
-            ]);
-        }
-
-        return rand(1, 100) <= $finalChance;
-    }
-
-    private function getPlayerForAction(string $team, string $actionType, array $excludeIds = []): ?Player
+    private function getPlayerForAction(string $team, string $actionType, array $excludePlayers = []): ?Player
     {
         $players = ($team === 'home') ? $this->homePlayers : $this->awayPlayers;
-        $playerStats = ($team === 'home') ? $this->homePlayerStats : $this->awayPlayerStats;
 
-        $players = $players->whereNotIn('id', $excludeIds);
+        $players = $players->whereNotIn('id', $excludePlayers);
 
         if ($players->isEmpty()) {
             return null;
         }
 
         $positionPreferences = [];
-        $statWeights = [];
 
         switch ($actionType) {
             case 'GOAL':
             case 'SHOT_ON_TARGET':
             case 'SHOT_OFF_TARGET':
-                $positionPreferences = ['STRIKER' => 5, 'WINGER' => 3, 'MIDFIELDER' => 2];
-                $statWeights = ['attacking' => 0.6, 'technical_skills' => 0.2, 'speed' => 0.1, 'tactical_sense' => 0.1];
+                $positionWeights = [
+                    'STRIKER' => 10,
+                    'WINGER' => 6,
+                    'MIDFIELDER' => 3,
+                    'FULLBACK' => 1,
+                    'CENTRE_BACK' => 0.5,
+                    'GOALKEEPER' => 0.1
+                ];
                 break;
 
             case 'ASSIST':
-                $positionPreferences = ['MIDFIELDER' => 5, 'WINGER' => 4, 'STRIKER' => 2, 'FULLBACK' => 1];
-                $statWeights = ['technical_skills' => 0.5, 'tactical_sense' => 0.3, 'speed' => 0.1, 'attacking' => 0.1];
+                $positionWeights = [
+                    'MIDFIELDER' => 10,
+                    'WINGER' => 8,
+                    'STRIKER' => 5,
+                    'FULLBACK' => 3,
+                    'CENTRE_BACK' => 1,
+                    'GOALKEEPER' => 0.2
+                ];
                 break;
 
             case 'CORNER':
-            case 'FREE_KICK':
-                $positionPreferences = ['MIDFIELDER' => 5, 'WINGER' => 3, 'FULLBACK' => 2];
-                $statWeights = ['technical_skills' => 0.8, 'tactical_sense' => 0.2];
+                $positionWeights = [
+                    'MIDFIELDER' => 10,
+                    'WINGER' => 8,
+                    'FULLBACK' => 5,
+                    'STRIKER' => 3,
+                    'CENTRE_BACK' => 1,
+                    'GOALKEEPER' => 0
+                ];
                 break;
 
-            case 'SKILL_MOVE':
-                $positionPreferences = ['WINGER' => 5, 'STRIKER' => 3, 'MIDFIELDER' => 2];
-                $statWeights = ['technical_skills' => 0.5, 'speed' => 0.3, 'attacking' => 0.2];
+            case 'YELLOW_CARD':
+            case 'RED_CARD':
+            case 'TACKLE':
+                $positionWeights = [
+                    'CENTRE_BACK' => 10,
+                    'FULLBACK' => 8,
+                    'MIDFIELDER' => 6,
+                    'WINGER' => 3,
+                    'STRIKER' => 2,
+                    'GOALKEEPER' => 0.5
+                ];
                 break;
 
             default:
-                $positionPreferences = [
+                $positionWeights = [
                     'STRIKER' => 1,
                     'WINGER' => 1,
                     'MIDFIELDER' => 1,
                     'FULLBACK' => 1,
                     'CENTRE_BACK' => 1,
-                    'GOALKEEPER' => 0.1
+                    'GOALKEEPER' => 1
                 ];
-                $statWeights = [
-                    'attacking' => 0.2,
-                    'defending' => 0.2,
-                    'stamina' => 0.2,
-                    'technical_skills' => 0.2,
-                    'speed' => 0.1,
-                    'tactical_sense' => 0.1
-                ];
-                break;
         }
 
-        $playerRatings = [];
+        $playerWeights = [];
 
         foreach ($players as $player) {
-            $stats = $playerStats[$player->getKey()] ?? null;
-            if (!$stats) continue;
+            $positionWeight = $positionWeights[$player->position] ?? 1;
 
-            $positionMultiplier = $positionPreferences[$player->position] ?? 0.5;
-
-            $weightedRating = 0;
-            foreach ($statWeights as $stat => $weight) {
-                $weightedRating += ($stats[$stat] ?? 50) * $weight;
-            }
-
-            $weightedRating *= $positionMultiplier;
-
-            $conditionFactor = $stats['condition'] / 100;
-            $fatigueFactor = 1 - $this->playerFatigue[$player->getKey()];
-
-            $weightedRating *= $conditionFactor * $fatigueFactor;
-
-            $playerRatings[$player->getKey()] = $weightedRating;
+            $playerWeights[$player->getKey()] = $positionWeight * (0.7 + (0.3 * $player->rating/100));
         }
 
-        $totalRating = array_sum($playerRatings);
-        if ($totalRating <= 0) {
+        $totalWeight = array_sum($playerWeights);
+        if ($totalWeight <= 0) {
             return $players->random();
         }
 
-        $randValue = rand(0, (int)($totalRating * 100)) / 100;
-        $cumulativeRating = 0;
+        $randomValue = mt_rand(1, $totalWeight * 100) / 100;
+        $cumulativeWeight = 0;
 
-        foreach ($playerRatings as $playerId => $rating) {
-            $cumulativeRating += $rating;
-            if ($cumulativeRating >= $randValue) {
+        foreach ($playerWeights as $playerId => $weight) {
+            $cumulativeWeight += $weight;
+            if ($randomValue <= $cumulativeWeight) {
                 return $players->firstWhere('id', $playerId);
             }
         }
 
-        return $players->first();
+        return $players->random();
     }
 
     private function getDefendingPlayer(string $team, string $actionType): ?Player
     {
         $players = ($team === 'home') ? $this->homePlayers : $this->awayPlayers;
-        $playerStats = ($team === 'home') ? $this->homePlayerStats : $this->awayPlayerStats;
 
         if ($players->isEmpty()) {
             return null;
         }
 
-        $positionPreferences = [];
+        $positionWeights = [];
 
-        switch ($actionType) {
-            case 'GOAL':
-            case 'SHOT_ON_TARGET':
-            case 'SHOT_OFF_TARGET':
-            case 'GREAT_SAVE':
-                $positionPreferences = ['GOALKEEPER' => 10];
-                break;
-
-            case 'SKILL_MOVE':
-            case 'TACKLE':
-                $positionPreferences = [
-                    'CENTRE_BACK' => 3,
-                    'FULLBACK' => 3,
-                    'MIDFIELDER' => 2,
-                    'WINGER' => 0.5,
-                    'STRIKER' => 0.2,
-                    'GOALKEEPER' => 0.1
-                ];
-                break;
-
-            default:
-                $positionPreferences = [
-                    'CENTRE_BACK' => 3,
-                    'FULLBACK' => 2,
-                    'MIDFIELDER' => 1.5,
-                    'WINGER' => 0.5,
-                    'STRIKER' => 0.3,
-                    'GOALKEEPER' => 1
-                ];
-                break;
+        if (in_array($actionType, ['GOAL', 'SHOT_ON_TARGET', 'SAVE'])) {
+            $positionWeights = [
+                'GOALKEEPER' => 50,
+                'CENTRE_BACK' => 0.5,
+                'FULLBACK' => 0.3,
+                'MIDFIELDER' => 0.1,
+                'WINGER' => 0.05,
+                'STRIKER' => 0.01
+            ];
+        } else {
+            $positionWeights = [
+                'CENTRE_BACK' => 10,
+                'FULLBACK' => 8,
+                'MIDFIELDER' => 5,
+                'WINGER' => 2,
+                'STRIKER' => 1,
+                'GOALKEEPER' => 0.5
+            ];
         }
 
-        $playerRatings = [];
+        $playerWeights = [];
 
         foreach ($players as $player) {
-            $stats = $playerStats[$player->getKey()] ?? null;
-            if (!$stats) continue;
-
-            $positionMultiplier = $positionPreferences[$player->position] ?? 0.5;
-
-            $defensiveRating = 0;
-
-            if ($player->position === 'GOALKEEPER' && in_array($actionType, ['GOAL', 'SHOT_ON_TARGET', 'GREAT_SAVE'])) {
-                $defensiveRating = $stats['defending'] * 1.5;
-            } else {
-                $defensiveRating = ($stats['defending'] * 0.6) +
-                    ($stats['tactical_sense'] * 0.2) +
-                    ($stats['speed'] * 0.2);
-            }
-
-            $defensiveRating *= $positionMultiplier;
-
-            $conditionFactor = $stats['condition'] / 100;
-            $fatigueFactor = 1 - $this->playerFatigue[$player->getKey()];
-
-            $defensiveRating *= $conditionFactor * $fatigueFactor;
-
-            $playerRatings[$player->getKey()] = $defensiveRating;
+            $positionWeight = $positionWeights[$player->position] ?? 1;
+            $playerStats = ($team === 'home') ? $this->homePlayerStats[$player->getKey()] : $this->awayPlayerStats[$player->getKey()];
+            $defenseRating = $playerStats['defending'] ?? 50;
+            $playerWeights[$player->getKey()] = $positionWeight * (0.6 + (0.4 * $defenseRating/100));
         }
 
-        $totalRating = array_sum($playerRatings);
-        if ($totalRating <= 0) {
+        $totalWeight = array_sum($playerWeights);
+        if ($totalWeight <= 0) {
             return $players->random();
         }
 
-        $randValue = rand(0, (int)($totalRating * 100)) / 100;
-        $cumulativeRating = 0;
+        $randValue = mt_rand(1, $totalWeight * 100) / 100;
+        $cumulativeWeight = 0;
 
-        foreach ($playerRatings as $playerId => $rating) {
-            $cumulativeRating += $rating;
-            if ($cumulativeRating >= $randValue) {
+        foreach ($playerWeights as $playerId => $weight) {
+            $cumulativeWeight += $weight;
+            if ($randValue <= $cumulativeWeight) {
                 return $players->firstWhere('id', $playerId);
             }
         }
 
-        return $players->first();
+        return $players->random();
     }
 
     private function recordEvent(string $type, string $team, ?Player $mainPlayer, ?Player $secondaryPlayer, string $commentary)
@@ -1321,41 +1135,6 @@ class SimulateMatchJob implements ShouldQueue
         return array_key_first(self::EVENTS);
     }
 
-    private function getRandomPlayer(Team $team, array $positions = [], array $excludeIds = []): ?Player
-    {
-        $query = Player::where('team_id', $team->getKey())
-            ->where('is_injured', false);
-
-        if (!empty($positions)) {
-            $query->whereIn('position', $positions);
-        }
-
-        if (!empty($excludeIds)) {
-            $query->whereNotIn('id', $excludeIds);
-        }
-
-        $players = $query->get();
-
-        if ($players->isEmpty()) {
-            return Player::where('team_id', $team->getKey())
-                ->whereNotIn('id', $excludeIds)
-                ->first();
-        }
-
-        $totalRating = $players->sum('rating');
-        $rand = mt_rand(1, $totalRating);
-
-        $currentRating = 0;
-        foreach ($players as $player) {
-            $currentRating += $player->rating;
-            if ($rand <= $currentRating) {
-                return $player;
-            }
-        }
-
-        return $players->first();
-    }
-
     private function generateGoalCommentary(Player $scorer, ?Player $assister, Player $goalkeeper): string
     {
         $templates = [
@@ -1386,62 +1165,6 @@ class SimulateMatchJob implements ShouldQueue
             '{goalkeeper}' => $goalkeeper->name,
             '{team}' => $team,
             '{score}' => $score,
-        ]);
-    }
-
-    private function generateSavedShotCommentary(Player $shooter, Player $goalkeeper): string
-    {
-        $templates = [
-            "Close! {shooter} with a great effort but {goalkeeper} makes the save!",
-            "Good chance for {team}! {shooter} shoots but {goalkeeper} is equal to it!",
-            "{shooter} tries his luck from distance but {goalkeeper} makes a comfortable save!",
-            "What a save from {goalkeeper}! {shooter} will be wondering how that didn't go in!",
-        ];
-
-        $template = $templates[array_rand($templates)];
-        $team = ($shooter->team_id === $this->homeTeam->getKey()) ? $this->homeTeam->name : $this->awayTeam->name;
-
-        return strtr($template, [
-            '{shooter}' => $shooter->name,
-            '{goalkeeper}' => $goalkeeper->name,
-            '{team}' => $team,
-        ]);
-    }
-
-    private function generateShotOnTargetCommentary(Player $shooter, Player $goalkeeper): string
-    {
-        $templates = [
-            "{shooter} gets a shot on target but it's saved by {goalkeeper}.",
-            "Good effort! {shooter} tests {goalkeeper} with a powerful shot.",
-            "Shot from {shooter}! Straight at {goalkeeper} though.",
-            "{team} on the attack, {shooter} gets a shot away but it's gathered by {goalkeeper}.",
-        ];
-
-        $template = $templates[array_rand($templates)];
-        $team = ($shooter->team_id === $this->homeTeam->getKey()) ? $this->homeTeam->name : $this->awayTeam->name;
-
-        return strtr($template, [
-            '{shooter}' => $shooter->name,
-            '{goalkeeper}' => $goalkeeper->name,
-            '{team}' => $team,
-        ]);
-    }
-
-    private function generateShotOffTargetCommentary(Player $shooter): string
-    {
-        $templates = [
-            "Shot by {shooter} but it's well wide of the target!",
-            "{shooter} tries to curl one but it's off target!",
-            "Good chance for {team} but {shooter} sends it high over the bar!",
-            "{shooter} with the shot... but it's not troubling the goalkeeper.",
-        ];
-
-        $template = $templates[array_rand($templates)];
-        $team = ($shooter->team_id === $this->homeTeam->getKey()) ? $this->homeTeam->name : $this->awayTeam->name;
-
-        return strtr($template, [
-            '{shooter}' => $shooter->name,
-            '{team}' => $team,
         ]);
     }
 }

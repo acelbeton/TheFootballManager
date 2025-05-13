@@ -33,7 +33,6 @@ class MatchViewer extends Component
     public $isMatchLive = false;
     public $canStartMatch = false;
     public $isLoading = false;
-    public $viewers = [];
     public $viewerCount = 0;
 
     protected $listeners = [
@@ -45,59 +44,65 @@ class MatchViewer extends Component
         'getMatchEvents' => 'getMatchEvents'
     ];
 
-    public function getMatchIdProperty()
-    {
-        return $this->match->getKey();
-    }
-
-    public function getMatchEvents()
+    public function getMatchEvents(): void
     {
         $this->dispatch('match_updated', [
             'events' => $this->matchEvents
         ]);
     }
 
-    private function loadMatchEvents()
+    private function loadMatchEvents(): void
     {
-        // Clear existing events first
-        $this->matchEvents = [];
-
-        // Get match events from database
         $events = $this->match->events()->orderBy('minute', 'asc')->get();
 
         if ($events->isNotEmpty()) {
-            // Use existing events from database
             $this->matchEvents = $events->toArray();
             return;
         }
 
-        // If no events in database, generate them from player performances
+        $this->generateEventsFromPerformances();
+    }
+
+    private function generateEventsFromPerformances(): void
+    {
         $performances = $this->match->playerPerformances()
             ->with('player')
             ->get();
 
-        $homeGoals = [];
-        $awayGoals = [];
+        $events = [];
+        $homeGoals = 0;
+        $awayGoals = 0;
 
         foreach ($performances as $performance) {
-            $player = $performance->player;
-            if (!$player) continue;
+            if (!$performance->player) continue;
 
+            $player = $performance->player;
             $isHomeTeam = ($player->team_id == $this->homeTeam->getKey());
             $team = $isHomeTeam ? 'home' : 'away';
 
             for ($i = 0; $i < $performance->goals_scored; $i++) {
-                $minute = $this->calculateProbableMinuteForGoal($i, $performance->goals_scored);
+                $minute = $this->generateRandomMinute($i, $performance->goals_scored);
 
-                $assisterPerformance = $performances
-                    ->where('assists', '>', 0)
-                    ->where('player.team_id', $player->team_id)
-                    ->where('player_id', '!=', $player->getKey())
-                    ->first();
+                $assister = null;
+                if (rand(1, 100) <= 70) {
+                    $potentialAssister = $performances
+                        ->where('player.team_id', $player->team_id)
+                        ->where('player_id', '!=', $player->getKey())
+                        ->where('assists', '>', 0)
+                        ->first();
 
-                $assister = $assisterPerformance ? $assisterPerformance->player : null;
+                    if ($potentialAssister) {
+                        $assister = $potentialAssister->player;
+                    }
+                }
 
-                $goalEvent = [
+                if ($isHomeTeam) {
+                    $homeGoals++;
+                } else {
+                    $awayGoals++;
+                }
+
+                $events[] = [
                     'type' => 'GOAL',
                     'minute' => $minute,
                     'team' => $team,
@@ -107,27 +112,70 @@ class MatchViewer extends Component
                     'secondary_player_name' => $assister ? $assister->name : null,
                     'commentary' => "GOAL! " . $player->name . " scores" .
                         ($assister ? " after a great assist from " . $assister->name : "") . "!",
-                    'home_score' => $isHomeTeam ? count($homeGoals) + 1 : count($homeGoals),
-                    'away_score' => $isHomeTeam ? count($awayGoals) : count($awayGoals) + 1,
+                    'home_score' => $isHomeTeam ? $homeGoals : $homeGoals,
+                    'away_score' => $isHomeTeam ? $awayGoals : $awayGoals,
                 ];
-
-                if ($isHomeTeam) {
-                    $homeGoals[] = $goalEvent;
-                } else {
-                    $awayGoals[] = $goalEvent;
-                }
             }
         }
 
-        $this->matchEvents = array_merge($homeGoals, $awayGoals);
+        if (empty($events) && ($this->match->home_team_score > 0 || $this->match->away_team_score > 0)) {
+            $this->generateGenericEvents();
+            return;
+        }
 
-        usort($this->matchEvents, function($a, $b) {
+        usort($events, function($a, $b) {
             return $a['minute'] <=> $b['minute'];
         });
 
-        if (empty($this->matchEvents) && ($this->match->home_team_score > 0 || $this->match->away_team_score > 0)) {
-            $this->generateGenericMatchEvents();
+        $this->matchEvents = $events;
+    }
+
+    private function generateRandomMinute($goalIndex, $totalGoals)
+    {
+        $avgMinutesPerGoal = 85 / ($totalGoals + 1);
+        $baseMinute = ($goalIndex + 1) * $avgMinutesPerGoal;
+
+        $variance = rand(-10, 10);
+        $minute = round($baseMinute + $variance);
+
+        return max(1, min(90, $minute));
+    }
+
+    private function generateGenericEvents()
+    {
+        $events = [];
+
+        for ($i = 0; $i < $this->match->home_team_score; $i++) {
+            $minute = $this->generateRandomMinute($i, $this->match->home_team_score);
+            $events[] = [
+                'type' => 'GOAL',
+                'minute' => $minute,
+                'team' => 'home',
+                'main_player_name' => 'Unknown Player',
+                'commentary' => "GOAL! The home team scores!",
+                'home_score' => $i + 1,
+                'away_score' => 0,
+            ];
         }
+
+        for ($i = 0; $i < $this->match->away_team_score; $i++) {
+            $minute = $this->generateRandomMinute($i, $this->match->away_team_score);
+            $events[] = [
+                'type' => 'GOAL',
+                'minute' => $minute,
+                'team' => 'away',
+                'main_player_name' => 'Unknown Player',
+                'commentary' => "GOAL! The away team scores!",
+                'home_score' => $this->match->home_team_score,
+                'away_score' => $i + 1,
+            ];
+        }
+
+        usort($events, function($a, $b) {
+            return $a['minute'] <=> $b['minute'];
+        });
+
+        $this->matchEvents = $events;
     }
 
     private function calculateProbableMinuteForGoal($goalNumber, $totalGoals)
@@ -143,40 +191,40 @@ class MatchViewer extends Component
         return max(1, min(90, (int)($targetMinute + $variance)));
     }
 
-    private function generateGenericMatchEvents()
-    {
-        for ($i = 0; $i < $this->match->home_team_score; $i++) {
-            $minute = $this->calculateProbableMinuteForGoal($i, $this->match->home_team_score);
-            $this->matchEvents[] = [
-                'type' => 'GOAL',
-                'minute' => $minute,
-                'team' => 'home',
-                'main_player_name' => 'Unknown Player',
-                'commentary' => "GOAL! The home team scores!",
-                'home_score' => $i + 1,
-                'away_score' => 0,
-            ];
-        }
+//    private function generateGenericMatchEvents()
+//    {
+//        for ($i = 0; $i < $this->match->home_team_score; $i++) {
+//            $minute = $this->calculateProbableMinuteForGoal($i, $this->match->home_team_score);
+//            $this->matchEvents[] = [
+//                'type' => 'GOAL',
+//                'minute' => $minute,
+//                'team' => 'home',
+//                'main_player_name' => 'Unknown Player',
+//                'commentary' => "GOAL! The home team scores!",
+//                'home_score' => $i + 1,
+//                'away_score' => 0,
+//            ];
+//        }
+//
+//        for ($i = 0; $i < $this->match->away_team_score; $i++) {
+//            $minute = $this->calculateProbableMinuteForGoal($i, $this->match->away_team_score);
+//            $this->matchEvents[] = [
+//                'type' => 'GOAL',
+//                'minute' => $minute,
+//                'team' => 'away',
+//                'main_player_name' => 'Unknown Player',
+//                'commentary' => "GOAL! The away team scores!",
+//                'home_score' => $this->match->home_team_score,
+//                'away_score' => $i + 1,
+//            ];
+//        }
+//
+//        usort($this->matchEvents, function($a, $b) {
+//            return $a['minute'] <=> $b['minute'];
+//        });
+//    }
 
-        for ($i = 0; $i < $this->match->away_team_score; $i++) {
-            $minute = $this->calculateProbableMinuteForGoal($i, $this->match->away_team_score);
-            $this->matchEvents[] = [
-                'type' => 'GOAL',
-                'minute' => $minute,
-                'team' => 'away',
-                'main_player_name' => 'Unknown Player',
-                'commentary' => "GOAL! The away team scores!",
-                'home_score' => $this->match->home_team_score,
-                'away_score' => $i + 1,
-            ];
-        }
-
-        usort($this->matchEvents, function($a, $b) {
-            return $a['minute'] <=> $b['minute'];
-        });
-    }
-
-    public function mount($matchId)
+    public function mount($matchId): void
     {
         $this->match = MatchModel::findOrFail($matchId);
         $this->homeTeam = Team::findOrFail($this->match->home_team_id);
@@ -187,14 +235,25 @@ class MatchViewer extends Component
 
         $simulationService = app(RealtimeMatchSimulationService::class);
         $status = $simulationService->getMatchStatus($this->match);
-
         $this->isMatchLive = (strtoupper($status) === 'IN_PROGRESS');
         $this->status = $status;
 
+        $this->setInitialMatchStats();
+
+        if ($this->status === 'IN_PROGRESS' || $this->status === 'COMPLETED' ||
+            $this->match->home_team_score > 0 || $this->match->away_team_score > 0) {
+            $this->loadMatchEvents();
+        }
+
+        $this->canStartMatch = $this->determineCanStartMatch();
+    }
+
+    private function setInitialMatchStats(): void
+    {
         $this->matchStats = [
             'current_minute' => 0,
-            'home_score' => $this->match->home_team_score,
-            'away_score' => $this->match->away_team_score,
+            'home_score' => $this->match->home_team_score ?? 0,
+            'away_score' => $this->match->away_team_score ?? 0,
             'home_possession' => $this->match->home_possession ?? 50,
             'away_possession' => $this->match->away_possession ?? 50,
             'home_shots' => $this->match->home_shots ?? 0,
@@ -203,35 +262,44 @@ class MatchViewer extends Component
             'away_shots_on_target' => $this->match->away_shots_on_target ?? 0,
         ];
 
-        if ($status === 'IN_PROGRESS' || strtoupper($status) === 'COMPLETED' || $this->match->home_team_score > 0 || $this->match->away_team_score > 0) {
-            $this->loadMatchEvents();
-        }
-
-        if (strtoupper($status) === 'IN_PROGRESS') {
+        if ($this->isMatchLive) {
+            $simulationService = app(RealtimeMatchSimulationService::class);
             $matchState = $simulationService->getMatchState($this->match);
-            $this->matchStats['current_minute'] = $matchState['current_minute'];
 
-            if (isset($matchState['home_team']['possession'])) {
-                $this->matchStats['home_possession'] = $matchState['home_team']['possession'];
-                $this->matchStats['away_possession'] = $matchState['away_team']['possession'];
+            if (isset($matchState['current_minute'])) {
+                $this->matchStats['current_minute'] = $matchState['current_minute'];
             }
 
-            if (isset($matchState['home_team']['shots'])) {
-                $this->matchStats['home_shots'] = $matchState['home_team']['shots'];
-                $this->matchStats['away_shots'] = $matchState['away_team']['shots'];
-            }
-
-            if (isset($matchState['home_team']['shots_on_target'])) {
-                $this->matchStats['home_shots_on_target'] = $matchState['home_team']['shots_on_target'];
-                $this->matchStats['away_shots_on_target'] = $matchState['away_team']['shots_on_target'];
+            if (isset($matchState['home_team'])) {
+                $this->updateStatsFromMatchState($matchState);
             }
         }
+    }
 
-        $this->canStartMatch =
-            $this->isUserTeam &&
-            $status === 'pending' &&
+    private function updateStatsFromMatchState($matchState)
+    {
+        $stats = [
+            'possession' => 'possession',
+            'shots' => 'shots',
+            'shots_on_target' => 'shots_on_target',
+            'score' => 'score'
+        ];
+
+        foreach ($stats as $statKey => $matchStatsKey) {
+            if (isset($matchState['home_team'][$statKey])) {
+                $this->matchStats['home_' . $matchStatsKey] = $matchState['home_team'][$statKey];
+                $this->matchStats['away_' . $matchStatsKey] = $matchState['away_team'][$statKey];
+            }
+        }
+    }
+
+    private function determineCanStartMatch(): bool
+    {
+        return $this->isUserTeam &&
+            $this->status === 'pending' &&
             now()->addMinutes(15)->gte($this->match->match_date) &&
-            ($this->match->home_team_score == 0 && $this->match->away_team_score == 0);
+            $this->match->home_team_score == 0 &&
+            $this->match->away_team_score == 0;
     }
 
     public function startMatch()
@@ -265,7 +333,6 @@ class MatchViewer extends Component
 
     public function handleViewersPresent($data)
     {
-        $this->viewers = $data;
         $this->viewerCount = count($data);
 
         if ($this->viewerCount > 1) {
@@ -278,39 +345,31 @@ class MatchViewer extends Component
 
     public function handleNewViewer($data)
     {
-        $this->viewers[$data['id']] = $data;
-        $this->viewerCount = count($this->viewers);
+        $this->viewerCount++;
 
         $user = $data['user'] ?? ['name' => 'Someone', 'id' => null];
-        $userName = $user['name'] ?? 'Someone';
-
         if (isset($user['id']) && $user['id'] != Auth::id()) {
             $this->dispatch('notify', [
                 'type' => 'info',
-                'message' => "{$userName} joined the match"
+                'message' => "{$user['name']} joined the match"
             ]);
         }
     }
 
     public function handleViewerLeaving($data)
     {
-        if (isset($this->viewers[$data['id']])) {
-            $user = $this->viewers[$data['id']]['user'] ?? ['name' => 'Someone', 'id' => null];
-            $userName = $user['name'] ?? 'Someone';
+        $this->viewerCount = max(0, $this->viewerCount - 1);
 
-            unset($this->viewers[$data['id']]);
-            $this->viewerCount = count($this->viewers);
-
-            if (isset($user['id']) && $user['id'] != Auth::id()) {
-                $this->dispatch('notify', [
-                    'type' => 'info',
-                    'message' => "{$userName} left the match"
-                ]);
-            }
+        $user = $data['user'] ?? ['name' => 'Someone', 'id' => null];
+        if (isset($user['id']) && $user['id'] != Auth::id()) {
+            $this->dispatch('notify', [
+                'type' => 'info',
+                'message' => "{$user['name']} left the match"
+            ]);
         }
     }
 
-    public function handleMatchUpdate($update)
+    public function handleMatchUpdate($update): void
     {
         if (!isset($update['current_minute']) ||
             !isset($update['home_team']) ||
@@ -338,127 +397,91 @@ class MatchViewer extends Component
         }
 
         if (isset($update['event']) && $update['event']) {
-            $eventExists = false;
-            foreach ($this->matchEvents as $existingEvent) {
-                $existingSignature = $existingEvent['type'] . '-' . $existingEvent['minute'] . '-' .
-                    ($existingEvent['main_player_id'] ?? '');
-                $newSignature = $update['event']['type'] . '-' . $update['event']['minute'] . '-' .
-                    ($update['event']['main_player_id'] ?? '');
-
-                if ($existingSignature === $newSignature) {
-                    $eventExists = true;
-                    break;
-                }
-            }
-
-            if (!$eventExists) {
-                $this->matchEvents[] = $update['event'];
-
-                usort($this->matchEvents, function($a, $b) {
-                    return $a['minute'] <=> $b['minute'];
-                });
-
-                $this->dispatch('match_updated', [
-                    'events' => $this->matchEvents
-                ]);
-            }
+            $this->processNewEvent($update['event']);
         }
 
-        if ($update['type']) {
-            $simulationService = app(RealtimeMatchSimulationService::class);
-
-            if ($update['type'] === 'MATCH_START') {
-                $this->isMatchLive = true;
-                $this->status = 'IN_PROGRESS';
-                $this->dispatch('status_updated', [
-                    'isLive' => true,
-                    'status' => 'IN_PROGRESS'
-                ]);
-            }
-            else if ($update['type'] === 'MATCH_END' || $update['type'] === 'FINAL_SCORE_CONFIRMATION') {
-                $this->isMatchLive = false;
-                $this->status = 'COMPLETED';
-
-                $simulationService->updateMatchStatus($this->match, 'COMPLETED', 90);
-
-                $this->dispatch('status_updated', [
-                    'isLive' => false,
-                    'status' => 'COMPLETED'
-                ]);
-
-                $this->match->update([
-                    'home_team_score' => $update['home_team']['score'],
-                    'away_team_score' => $update['away_team']['score'],
-                ]);
-                $this->match->refresh();
-            }
+        if (isset($update['type'])) {
+            $this->handleMatchStatusChange($update);
         }
     }
 
-    public function handleTacticChange($teamId, $newTactic)
+    private function processNewEvent($event): void
     {
-        if (!$this->isUserTeam || Auth::user()->currentTeam != $teamId) {
-            $team = ($teamId == $this->homeTeam->getKey()) ? $this->homeTeam : $this->awayTeam;
+        $eventSignature = $event['type'] . '-' . $event['minute'] . '-' . ($event['main_player_id'] ?? '');
 
-            $this->dispatch('notify', [
-                'type' => 'warning',
-                'message' => "{$team->name} has changed their tactic to " . str_replace('_', ' ', $newTactic)
+        foreach ($this->matchEvents as $existingEvent) {
+            $existingSignature = $existingEvent['type'] . '-' . $existingEvent['minute'] . '-' .
+                ($existingEvent['main_player_id'] ?? '');
+
+            if ($existingSignature === $eventSignature) {
+                return;
+            }
+        }
+
+        $this->matchEvents[] = $event;
+        usort($this->matchEvents, function($a, $b) {
+            return $a['minute'] <=> $b['minute'];
+        });
+
+        $this->dispatch('match_updated', ['events' => $this->matchEvents]);
+    }
+
+    private function handleMatchStatusChange($update): void
+    {
+        $simulationService = app(RealtimeMatchSimulationService::class);
+
+        if ($update['type'] === 'MATCH_START') {
+            $this->isMatchLive = true;
+            $this->status = 'IN_PROGRESS';
+            $this->dispatch('status_updated', [
+                'isLive' => true,
+                'status' => 'IN_PROGRESS'
+            ]);
+        }
+        else if ($update['type'] === 'MATCH_END' || $update['type'] === 'FINAL_STATS_CONFIRMATION') {
+            $this->isMatchLive = false;
+            $this->status = 'COMPLETED';
+
+            $simulationService->updateMatchStatus($this->match, 'COMPLETED', 90);
+
+            $this->match->update([
+                'home_team_score' => $update['home_team']['score'],
+                'away_team_score' => $update['away_team']['score'],
+            ]);
+
+            $this->dispatch('status_updated', [
+                'isLive' => false,
+                'status' => 'COMPLETED'
             ]);
         }
     }
 
-    public function reconnect()
+    public function refreshMatchData()
     {
         try {
             $simulationService = app(RealtimeMatchSimulationService::class);
-
             $this->match->refresh();
-
             $matchState = $simulationService->getMatchState($this->match);
 
-            if (isset($matchState['current_minute'])) {
-                $this->matchStats['current_minute'] = $matchState['current_minute'];
-            }
+            if ($matchState) {
+                if (isset($matchState['current_minute'])) {
+                    $this->matchStats['current_minute'] = $matchState['current_minute'];
+                }
 
-            if (isset($matchState['home_team']['score'])) {
-                $this->matchStats['home_score'] = $matchState['home_team']['score'];
-            }
-
-            if (isset($matchState['away_team']['score'])) {
-                $this->matchStats['away_score'] = $matchState['away_team']['score'];
-            }
-
-            if (isset($matchState['home_team']['possession'])) {
-                $this->matchStats['home_possession'] = $matchState['home_team']['possession'];
-                $this->matchStats['away_possession'] = $matchState['away_team']['possession'];
-            }
-
-            if (isset($matchState['home_team']['shots'])) {
-                $this->matchStats['home_shots'] = $matchState['home_team']['shots'];
-                $this->matchStats['away_shots'] = $matchState['away_team']['shots'];
-            }
-
-            if (isset($matchState['home_team']['shots_on_target'])) {
-                $this->matchStats['home_shots_on_target'] = $matchState['home_team']['shots_on_target'];
-                $this->matchStats['away_shots_on_target'] = $matchState['away_team']['shots_on_target'];
+                if (isset($matchState['home_team'])) {
+                    $this->updateStatsFromMatchState($matchState);
+                }
             }
 
             $this->loadMatchEvents();
             $this->getMatchEvents();
-
             $status = $simulationService->getMatchStatus($this->match);
             $this->isMatchLive = (strtoupper($status) === 'IN_PROGRESS');
             $this->status = $status;
 
-            $this->dispatch('notify', [
-                'type' => 'success',
-                'message' => "Reconnected to match"
-            ]);
+            $this->dispatch('success', "Match data refreshed");
         } catch (Exception $e) {
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'message' => "Failed to reconnect: " . $e->getMessage()
-            ]);
+            $this->dispatch('error', "Failed to refresh data: " . $e->getMessage());
         }
     }
 

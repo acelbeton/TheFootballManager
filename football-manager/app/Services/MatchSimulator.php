@@ -61,7 +61,7 @@ class MatchSimulator
         return $match;
     }
 
-    private function calculateMatchResult(Team $homeTeam, Team $awayTeam): array
+    public function calculateMatchResult(Team $homeTeam, Team $awayTeam): array
     {
         $homeStrength = $this->calculateTeamStrengthByPosition($homeTeam);
         $awayStrength = $this->calculateTeamStrengthByPosition($awayTeam);
@@ -294,7 +294,7 @@ class MatchSimulator
         $numYellowCards = min(10, max(0, $this->getRandomNormal(3, 1.5)));
         $this->generateCards($events['yellow_cards'], $homeTeam, $awayTeam, $numYellowCards);
 
-        // Piros lapok (0-1 meccsenként
+        // Piros lapok (0-1 meccsenként)
         $redCardChance = 15;
         if (mt_rand(1, 100) <= $redCardChance) {
             $this->generateCards($events['red_cards'], $homeTeam, $awayTeam, 1);
@@ -554,7 +554,7 @@ class MatchSimulator
         }
     }
 
-    private function recordPlayerPerformances(MatchModel $match, Team $homeTeam, Team $awayTeam, array $events): void
+    public function recordPlayerPerformances(MatchModel $match, Team $homeTeam, Team $awayTeam, array $events): void
     {
         $playerRatings = $events['player_ratings'];
 
@@ -746,4 +746,3 @@ class MatchSimulator
         return true;
     }
 }
-

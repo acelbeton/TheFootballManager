@@ -60,7 +60,6 @@ class TeamSelection extends Component
             return;
         }
 
-        // Handle current team change if needed
         if ($user->current_team_id === $team->id) {
             $newCurrentTeam = $user->teams()
                 ->where('id', '!=', $team->id)
@@ -71,10 +70,8 @@ class TeamSelection extends Component
 
         $team->delete();
 
-        // Refresh teams list
         $this->loadTeams();
 
-        // Redirect if no teams left
         if ($user->teams()->count() === 0) {
             return redirect()->route('create-team')
                 ->with('status', 'Last team deleted. Please create a new team.');

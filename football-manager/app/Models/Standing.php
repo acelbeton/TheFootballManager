@@ -37,17 +37,13 @@ class Standing extends Model
 
     public function updateTeamPointsPerWeekAvg($teamId)
     {
-        // Gather sums/counts
         $sumPoints = TeamPerformance::where('team_id', $teamId)->sum('points');
         $weeksPlayed = TeamPerformance::where('team_id', $teamId)
             ->distinct('week_number')
             ->count('week_number');
 
-        // Compute average
         $avg = $weeksPlayed > 0 ? $sumPoints / $weeksPlayed : 0;
 
-        // Now find the relevant standings row (for the correct season)
-        // You might pass the season_id or find it in another way.
         $standing = Standing::where('team_id', $teamId)->first();
         if ($standing) {
             $standing->points_per_week_avg = $avg;

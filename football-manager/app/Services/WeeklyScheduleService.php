@@ -75,7 +75,6 @@ class WeeklyScheduleService
             ->get();
 
         foreach ($pendingMatches as $match) {
-            // Check if this is an AI vs AI match
             $isAIMatch = $match->homeTeam->user_id === null && $match->awayTeam->user_id === null;
 
             if ($isAIMatch) {

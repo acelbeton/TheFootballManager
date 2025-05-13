@@ -169,8 +169,6 @@
 </div>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        console.log("Match viewer initialized");
-
         const matchViewer = {
             events: [],
             displayedEvents: [],
@@ -187,142 +185,95 @@
 
             init: function() {
                 this.setupEventListeners();
+                this.loadInitialData();
+                this.setupMatchStatus();
+            },
 
+            loadInitialData: function() {
                 this.events = @json($matchEvents) || [];
-                console.log("Initial events:", this.events.length);
-
                 this.renderInitialCommentary();
+            },
 
+            setupMatchStatus: function() {
                 const liveIndicator = document.querySelector('.live-indicator');
                 const finishedIndicator = document.querySelector('.finished-indicator');
 
                 if (liveIndicator) {
                     this.isLive = true;
-
+                    this.startMinuteUpdater();
                     const minuteCounter = document.querySelector('.minute-counter');
                     if (minuteCounter) {
                         this.currentMinute = parseInt(minuteCounter.textContent) || 0;
                     }
-
-                    this.startMinuteUpdater();
                 } else if (finishedIndicator) {
                     this.currentMinute = 90;
+                    this.showAllEvents = true;
                     this.renderFullTimeEvents();
                 }
             },
 
             setupEventListeners: function() {
-                const startButton = document.querySelector('button[wire\\:click="startMatch"]');
-                if (startButton) {
-                    console.log("Start button event listener added");
-                    startButton.addEventListener('click', () => {
-                        console.log("Start match button clicked");
-
-                        const upcomingIndicator = document.querySelector('.upcoming-indicator');
-                        if (upcomingIndicator) {
-                            upcomingIndicator.textContent = 'LIVE';
-                            upcomingIndicator.className = 'live-indicator';
-                        }
-
-                        const minuteCounter = document.querySelector('.minute-counter');
-                        if (minuteCounter) {
-                            minuteCounter.textContent = '0\'';
-                            minuteCounter.style.display = 'inline-block';
-                        }
-
-                        setTimeout(() => {
-                            this.addKickoffCommentary();
-                            this.isLive = true;
-
-                            this.startMinuteUpdater();
-                        }, 1000);
-                    });
-                }
+                // const startButton = document.querySelector('button[wire\\:click="startMatch"]');
+                // if (startButton) {
+                //     startButton.addEventListener('click', () => this.handleMatchStart());
+                // }
 
                 document.addEventListener('livewire:init', () => {
-                    console.log("Setting up Livewire event listeners");
-
                     Livewire.on('match_updated', (eventData) => {
-                        console.log("Match update received:", eventData);
-
                         if (eventData && eventData.events && eventData.events.length > 0) {
                             this.processNewEvents(eventData.events);
                         }
                     });
 
-                    Livewire.on('match-started', () => {
-                        console.log("Match started event received");
-                        this.isLive = true;
-
-                        const upcomingIndicator = document.querySelector('.upcoming-indicator');
-                        if (upcomingIndicator) {
-                            upcomingIndicator.textContent = 'LIVE';
-                            upcomingIndicator.className = 'live-indicator';
-                        }
-
-                        const minuteCounter = document.querySelector('.minute-counter');
-                        if (minuteCounter) {
-                            minuteCounter.textContent = '0\'';
-                            minuteCounter.style.display = 'inline-block';
-                        }
-
-                        this.addKickoffCommentary();
-
-                        this.startMinuteUpdater();
-                    });
+                    Livewire.on('match-started', () => this.handleMatchStart());
+                    Livewire.on('status_updated', (data) => this.handleStatusUpdate(data));
 
                     if (window.Echo) {
-                        console.log("Setting up Echo listener for channel match." + this.matchId);
                         window.Echo.join(`match.${this.matchId}`)
                             .listen('.MatchStatusUpdate', (update) => {
-                                console.log("Echo received match update:", update);
                                 this.handleMatchUpdate(update);
                             });
                     }
-
-                    Livewire.on('status_updated', (data) => {
-                        console.log("Match status update received:", data);
-
-                        if (data.status === 'COMPLETED') {
-                            this.isLive = false;
-
-                            const liveIndicator = document.querySelector('.live-indicator');
-                            if (liveIndicator) {
-                                liveIndicator.textContent = 'FULL TIME';
-                                liveIndicator.className = 'finished-indicator';
-                            }
-
-                            this.addFulltimeCommentary();
-
-                            while (this.pendingEvents.length > 0) {
-                                const event = this.pendingEvents.shift();
-                                this.displayEvent(event, true);
-                            }
-
-                            if (this.minuteUpdateTimer) {
-                                clearInterval(this.minuteUpdateTimer);
-                                this.minuteUpdateTimer = null;
-                            }
-
-                            if (this.eventDisplayTimer) {
-                                clearInterval(this.eventDisplayTimer);
-                                this.eventDisplayTimer = null;
-                            }
-                        } else if (data.status === 'IN_PROGRESS') {
-                            this.isLive = true;
-
-                            const upcomingIndicator = document.querySelector('.upcoming-indicator');
-                            if (upcomingIndicator) {
-                                upcomingIndicator.textContent = 'LIVE';
-                                upcomingIndicator.className = 'live-indicator';
-                            }
-
-                            if (!this.minuteUpdateTimer) {
-                                this.startMinuteUpdater();
-                            }
-                        }
-                    });
                 });
+            },
+
+            handleMatchStart: function() {
+                this.isLive = true;
+
+                const upcomingIndicator = document.querySelector('.upcoming-indicator');
+                if (upcomingIndicator) {
+                    upcomingIndicator.textContent = 'LIVE';
+                    upcomingIndicator.className = 'live-indicator';
+                }
+
+                const minuteCounter = document.querySelector('.minute-counter');
+                if (minuteCounter) {
+                    minuteCounter.textContent = '0\'';
+                    minuteCounter.style.display = 'inline-block';
+                }
+
+                setTimeout(() => {
+                    this.addKickoffCommentary();
+                    this.startMinuteUpdater();
+                }, 1000);
+            },
+
+            handleStatusUpdate: function(data) {
+                if (data.status === 'COMPLETED') {
+                    this.endMatch();
+                } else if (data.status === 'IN_PROGRESS') {
+                    this.isLive = true;
+
+                    const upcomingIndicator = document.querySelector('.upcoming-indicator');
+                    if (upcomingIndicator) {
+                        upcomingIndicator.textContent = 'LIVE';
+                        upcomingIndicator.className = 'live-indicator';
+                    }
+
+                    if (!this.minuteUpdateTimer) {
+                        this.startMinuteUpdater();
+                    }
+                }
             },
 
             renderInitialCommentary: function() {
@@ -341,17 +292,21 @@
                         this.displayedEvents.push(event);
                     });
                 } else if (!this.isLive) {
-                    const item = document.createElement('div');
-                    item.className = 'commentary-item GENERIC neutral-team';
-                    item.innerHTML = `
-                    <div class="event-minute">0'</div>
-                    <div class="event-icon"><i class="bi bi-circle"></i></div>
-                    <div class="event-content">
-                        <div class="event-text">Match will begin soon. Stay tuned for live commentary!</div>
-                    </div>
-                `;
-                    feed.appendChild(item);
+                    this.displayWaitingMessage(feed);
                 }
+            },
+
+            displayWaitingMessage: function(feed) {
+                const item = document.createElement('div');
+                item.className = 'commentary-item GENERIC neutral-team';
+                item.innerHTML = `
+                <div class="event-minute">0'</div>
+                <div class="event-icon"><i class="bi bi-circle"></i></div>
+                <div class="event-content">
+                    <div class="event-text">Match will begin soon. Stay tuned for live commentary!</div>
+                </div>
+            `;
+                feed.appendChild(item);
             },
 
             renderCommentary: function() {
@@ -361,16 +316,7 @@
                 feed.innerHTML = '';
 
                 if (this.events.length === 0) {
-                    const item = document.createElement('div');
-                    item.className = 'commentary-item GENERIC neutral-team';
-                    item.innerHTML = `
-                    <div class="event-minute">0'</div>
-                    <div class="event-icon"><i class="bi bi-circle"></i></div>
-                    <div class="event-content">
-                        <div class="event-text">Match will begin soon. Stay tuned for live commentary!</div>
-                    </div>
-                `;
-                    feed.appendChild(item);
+                    this.displayWaitingMessage(feed);
                     return;
                 }
 
@@ -416,8 +362,6 @@
                     return !existingEventIds.includes(eventId);
                 });
 
-                console.log(`Found ${eventsToAdd.length} new events to display`);
-
                 this.events = newEvents;
 
                 eventsToAdd.forEach(event => {
@@ -435,7 +379,8 @@
                     this.renderCommentary();
                 }
 
-                if (newEvents.some(e => e.minute >= 45) && !this.displayedEvents.some(e => e.type === 'GENERIC' && e.commentary && e.commentary.includes('Half time'))) {
+                if (newEvents.some(e => e.minute >= 45) &&
+                    !this.displayedEvents.some(e => e.type === 'GENERIC' && e.commentary && e.commentary.includes('Half time'))) {
                     this.addHalftimeCommentary();
                 }
             },
@@ -457,85 +402,96 @@
             },
 
             handleMatchUpdate: function(update) {
-                console.log("Processing match update:", update);
-
                 const matchData = update.payload || update;
 
                 if (matchData.current_minute !== undefined) {
-                    this.currentMinute = matchData.current_minute;
-                    const minuteCounter = document.querySelector('.minute-counter');
-                    if (minuteCounter) {
-                        minuteCounter.textContent = `${this.currentMinute}'`;
-                    }
+                    this.updateMinuteDisplay(matchData.current_minute);
                 }
 
                 if (matchData.home_team && matchData.away_team) {
-                    if (matchData.home_team.score !== undefined) {
-                        const homeScore = document.querySelector('.home-score');
-                        const currentHomeScore = parseInt(homeScore.textContent);
-
-                        if (homeScore && matchData.home_team.score > currentHomeScore) {
-                            homeScore.textContent = matchData.home_team.score;
-                            homeScore.classList.add('score-updated');
-                            setTimeout(() => homeScore.classList.remove('score-updated'), 1500);
-                        } else if (homeScore) {
-                            homeScore.textContent = matchData.home_team.score;
-                        }
-                    }
-
-                    if (matchData.away_team.score !== undefined) {
-                        const awayScore = document.querySelector('.away-score');
-                        const currentAwayScore = parseInt(awayScore.textContent);
-
-                        if (awayScore && matchData.away_team.score > currentAwayScore) {
-                            awayScore.textContent = matchData.away_team.score;
-                            awayScore.classList.add('score-updated');
-                            setTimeout(() => awayScore.classList.remove('score-updated'), 1500);
-                        } else if (awayScore) {
-                            awayScore.textContent = matchData.away_team.score;
-                        }
-                    }
-
+                    this.updateScores(matchData);
                     this.updateStats(matchData);
                 }
 
-
                 if (matchData.event) {
-                    const eventId = `${matchData.event.type}-${matchData.event.minute}-${matchData.event.main_player_id || 'none'}-${matchData.event.commentary || ''}`;
-                    const isNewEvent = !this.displayedEvents.some(e =>
-                        `${e.type}-${e.minute}-${e.main_player_id || 'none'}-${e.commentary || ''}` === eventId
-                    );
-
-                    if (isNewEvent) {
-                        console.log("New event received:", matchData.event);
-                        this.pendingEvents.push(matchData.event);
-                        this.displayedEvents.push(matchData.event);
-                        this.events.push(matchData.event);
-
-                        if (!this.isProcessingEvent && this.isLive) {
-                            this.processNextPendingEvent();
-                        }
-                    }
+                    this.handleNewEvent(matchData.event);
                 }
 
                 if (matchData.type) {
-                    if (matchData.type === 'MATCH_START') {
-                        this.isLive = true;
+                    this.handleMatchStatusEvent(matchData);
+                }
+            },
 
-                        const upcomingIndicator = document.querySelector('.upcoming-indicator');
-                        if (upcomingIndicator) {
-                            upcomingIndicator.textContent = 'LIVE';
-                            upcomingIndicator.className = 'live-indicator';
-                        }
+            updateMinuteDisplay: function(minute) {
+                this.currentMinute = minute;
+                const minuteCounter = document.querySelector('.minute-counter');
+                if (minuteCounter) {
+                    minuteCounter.textContent = `${this.currentMinute}'`;
+                }
+            },
 
-                        this.addKickoffCommentary();
+            updateScores: function(matchData) {
+                if (matchData.home_team.score !== undefined) {
+                    const homeScore = document.querySelector('.home-score');
+                    const currentHomeScore = parseInt(homeScore.textContent);
+
+                    if (homeScore && matchData.home_team.score > currentHomeScore) {
+                        homeScore.textContent = matchData.home_team.score;
+                        homeScore.classList.add('score-updated');
+                        setTimeout(() => homeScore.classList.remove('score-updated'), 1500);
+                    } else if (homeScore) {
+                        homeScore.textContent = matchData.home_team.score;
                     }
-                    else if (matchData.type === 'HALF_TIME') {
-                        this.addHalftimeCommentary();
+                }
+
+                if (matchData.away_team.score !== undefined) {
+                    const awayScore = document.querySelector('.away-score');
+                    const currentAwayScore = parseInt(awayScore.textContent);
+
+                    if (awayScore && matchData.away_team.score > currentAwayScore) {
+                        awayScore.textContent = matchData.away_team.score;
+                        awayScore.classList.add('score-updated');
+                        setTimeout(() => awayScore.classList.remove('score-updated'), 1500);
+                    } else if (awayScore) {
+                        awayScore.textContent = matchData.away_team.score;
                     }
-                    else if (matchData.type === 'MATCH_END') {
-                        this.endMatch();
+                }
+            },
+
+            handleNewEvent: function(event) {
+                const eventId = `${event.type}-${event.minute}-${event.main_player_id || 'none'}-${event.commentary || ''}`;
+                const isNewEvent = !this.displayedEvents.some(e =>
+                    `${e.type}-${e.minute}-${e.main_player_id || 'none'}-${e.commentary || ''}` === eventId
+                );
+
+                if (isNewEvent) {
+                    this.pendingEvents.push(event);
+                    this.displayedEvents.push(event);
+                    this.events.push(event);
+
+                    if (!this.isProcessingEvent && this.isLive) {
+                        this.processNextPendingEvent();
                     }
+                }
+            },
+
+            handleMatchStatusEvent: function(matchData) {
+                if (matchData.type === 'MATCH_START') {
+                    this.isLive = true;
+
+                    const upcomingIndicator = document.querySelector('.upcoming-indicator');
+                    if (upcomingIndicator) {
+                        upcomingIndicator.textContent = 'LIVE';
+                        upcomingIndicator.className = 'live-indicator';
+                    }
+
+                    this.addKickoffCommentary();
+                }
+                else if (matchData.type === 'HALF_TIME') {
+                    this.addHalftimeCommentary();
+                }
+                else if (matchData.type === 'MATCH_END') {
+                    this.endMatch();
                 }
             },
 
@@ -578,6 +534,11 @@
             },
 
             updateStats: function(update) {
+                this.updatePossessionStats(update);
+                this.updateShotStats(update);
+            },
+
+            updatePossessionStats: function(update) {
                 if (update.home_team.possession !== undefined && update.away_team.possession !== undefined) {
                     const currentHomePossession = parseInt(document.querySelector('.stat-item:nth-child(1) .home-value').textContent) || 50;
                     const currentAwayPossession = parseInt(document.querySelector('.stat-item:nth-child(1) .away-value').textContent) || 50;
@@ -586,20 +547,27 @@
                     const targetAwayPossession = update.away_team.possession;
 
                     if (Math.abs(currentHomePossession - targetHomePossession) >= 2) {
-                        this.animatePossessionChange(currentHomePossession, targetHomePossession, currentAwayPossession, targetAwayPossession);
+                        this.animatePossessionChange(currentHomePossession, targetHomePossession,
+                            currentAwayPossession, targetAwayPossession);
                     } else {
-                        const homePossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.home-bar');
-                        const awayPossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.away-bar');
-                        const homePossessionValue = document.querySelector('.stat-item:nth-child(1) .home-value');
-                        const awayPossessionValue = document.querySelector('.stat-item:nth-child(1) .away-value');
-
-                        if (homePossessionBar) homePossessionBar.style.width = `${update.home_team.possession}%`;
-                        if (awayPossessionBar) awayPossessionBar.style.width = `${update.away_team.possession}%`;
-                        if (homePossessionValue) homePossessionValue.textContent = `${update.home_team.possession}%`;
-                        if (awayPossessionValue) awayPossessionValue.textContent = `${update.away_team.possession}%`;
+                        this.updatePossessionDisplay(targetHomePossession, targetAwayPossession);
                     }
                 }
+            },
 
+            updatePossessionDisplay: function(homeValue, awayValue) {
+                const homePossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.home-bar');
+                const awayPossessionBar = document.querySelector('.stat-item:nth-child(1) .stat-bar.away-bar');
+                const homePossessionValue = document.querySelector('.stat-item:nth-child(1) .home-value');
+                const awayPossessionValue = document.querySelector('.stat-item:nth-child(1) .away-value');
+
+                if (homePossessionBar) homePossessionBar.style.width = `${homeValue}%`;
+                if (awayPossessionBar) awayPossessionBar.style.width = `${awayValue}%`;
+                if (homePossessionValue) homePossessionValue.textContent = `${homeValue}%`;
+                if (awayPossessionValue) awayPossessionValue.textContent = `${awayValue}%`;
+            },
+
+            updateShotStats: function(update) {
                 if (update.home_team.shots !== undefined && update.away_team.shots !== undefined) {
                     const homeShotsValue = document.querySelector('.stat-item:nth-child(2) .home-value');
                     const awayShotsValue = document.querySelector('.stat-item:nth-child(2) .away-value');
@@ -629,7 +597,6 @@
 
                 homePossessionValue.classList.add('changing');
                 awayPossessionValue.classList.add('changing');
-
                 const duration = 500;
                 const startTime = performance.now();
 
@@ -639,7 +606,6 @@
                     const easeProgress = progress * (2 - progress);
                     const currentHomeValue = Math.round(startHome + (endHome - startHome) * easeProgress);
                     const currentAwayValue = Math.round(startAway + (endAway - startAway) * easeProgress);
-
                     homePossessionBar.style.width = `${currentHomeValue}%`;
                     awayPossessionBar.style.width = `${currentAwayValue}%`;
                     homePossessionValue.textContent = `${currentHomeValue}%`;
@@ -681,17 +647,15 @@
                 const feed = document.getElementById('js-commentary-feed');
                 if (!feed) return;
 
-                console.log(`Displaying event: ${event.type} at minute ${event.minute}`);
-
                 const eventId = `commentary-${event.type}-${event.minute}-${event.main_player_id || 'none'}`;
 
                 if (feed.querySelector(`#${eventId}`)) {
-                    console.log(`Event ${eventId} already displayed, skipping`);
                     return;
                 }
 
                 const item = document.createElement('div');
                 item.className = `commentary-item ${event.type} ${event.team}-team`;
+                item.id = eventId;
 
                 if (event.type === 'GOAL' || event.type === 'RED_CARD' || event.type === 'YELLOW_CARD') {
                     item.classList.add('key-event');
@@ -701,16 +665,14 @@
                     item.classList.add('new-event');
                 }
 
-                item.id = eventId;
-
                 item.innerHTML = `
-                    <div class="event-minute">${event.minute}'</div>
-                    <div class="event-icon">${this.getEventIcon(event.type)}</div>
-                    <div class="event-content">
-                        <div class="event-text">${event.commentary}</div>
-                        ${event.type === 'GOAL' ? this.formatGoalDetails(event) : ''}
-                    </div>
-                `;
+                <div class="event-minute">${event.minute}'</div>
+                <div class="event-icon">${this.getEventIcon(event.type)}</div>
+                <div class="event-content">
+                    <div class="event-text">${event.commentary}</div>
+                    ${event.type === 'GOAL' ? this.formatGoalDetails(event) : ''}
+                </div>
+            `;
 
                 if (this.isLive && shouldScroll) {
                     item.style.opacity = '0';
@@ -721,29 +683,6 @@
                         item.style.opacity = '1';
                         item.style.transform = 'translateY(0)';
                     }, 10);
-                }
-
-                if (event.type === 'GOAL') {
-                    item.classList.add('goal-event-highlight');
-
-                    setTimeout(() => {
-                        feed.appendChild(item);
-
-                        this.scrollToBottom(feed);
-
-                        const celebrationOverlay = document.createElement('div');
-                        celebrationOverlay.className = 'goal-celebration-overlay';
-                        celebrationOverlay.textContent = 'GOAL!';
-                        document.querySelector('.match-viewer-container').appendChild(celebrationOverlay);
-
-                        setTimeout(() => celebrationOverlay.classList.add('show'), 10);
-                        setTimeout(() => {
-                            celebrationOverlay.classList.remove('show');
-                            setTimeout(() => celebrationOverlay.remove(), 1000);
-                        }, 1000);
-                    }, 400);
-
-                    return;
                 }
 
                 feed.appendChild(item);
@@ -777,7 +716,9 @@
                     case 'CORNER': return '<i class="bi bi-flag-fill"></i>';
                     case 'YELLOW_CARD': return '<div class="card yellow-card"></div>';
                     case 'RED_CARD': return '<div class="card red-card"></div>';
-                    case 'GREAT_SAVE': return '<i class="bi bi-hand-thumbs-up"></i>';
+                    case 'GREAT_SAVE':
+                    case 'SAVE': return '<i class="bi bi-hand-thumbs-up"></i>';
+                    case 'TACKLE': return '<i class="bi bi-shield"></i>';
                     default: return '<i class="bi bi-circle"></i>';
                 }
             },
@@ -815,7 +756,6 @@
                 };
 
                 this.displayEvent(kickoffEvent);
-
                 this.displayedEvents.push(kickoffEvent);
             },
 
@@ -836,7 +776,6 @@
                 };
 
                 this.displayEvent(halftimeEvent);
-
                 this.displayedEvents.push(halftimeEvent);
             },
 
@@ -848,7 +787,6 @@
                     .some(item => item.textContent.includes('Full time!'));
 
                 if (existingFulltime) return;
-
                 const fulltimeEvent = {
                     type: 'GENERIC',
                     minute: 90,
@@ -857,17 +795,14 @@
                 };
 
                 this.displayEvent(fulltimeEvent);
-
                 this.displayedEvents.push(fulltimeEvent);
             },
 
             endMatch: function() {
                 this.isLive = false;
-
-                this.addFulltimeCommentary();
-
                 this.showAllEvents = true;
 
+                this.addFulltimeCommentary();
                 while (this.pendingEvents.length > 0) {
                     const event = this.pendingEvents.shift();
                     this.displayEvent(event, true);
@@ -892,7 +827,6 @@
         };
 
         matchViewer.init();
-
         const ensureVisibility = function() {
             document.querySelectorAll('.commentary-item').forEach(item => {
                 item.style.display = 'flex';
@@ -907,7 +841,6 @@
         };
 
         setInterval(ensureVisibility, 1000);
-
         const observer = new MutationObserver(ensureVisibility);
         observer.observe(document.getElementById('js-commentary-feed') || document, {
             childList: true,
