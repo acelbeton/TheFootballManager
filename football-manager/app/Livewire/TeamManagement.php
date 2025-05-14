@@ -27,6 +27,7 @@ class TeamManagement extends Component
     public $showWarning = false;
     public $warningMessage = '';
     public $selectedPlayerForAssignment = null;
+    public $teamTactic;
 
     protected $formationToPlayerPosition = [
         'GOALKEEPER' => 'GOALKEEPER',
@@ -70,7 +71,7 @@ class TeamManagement extends Component
             redirect()->route('change-team');
         }
 
-        $this->formations = Formation::all();
+        $this->formations = Formation::all()->pluck('name', 'id');
         $this->players = Player::where('team_id', $this->team->getKey())->get();
 
         $this->lineup = TeamLineup::where('team_id', $this->team->getKey())
@@ -98,6 +99,11 @@ class TeamManagement extends Component
 
         $this->selectedFormationId = $this->lineup->formation_id;
         $this->selectedTactic = $this->lineup->tactic;
+        $this->teamTactic = [
+            'ATTACK_MODE' => 'Attack Mode',
+            'DEFEND_MODE' => 'Defend Mode',
+            'DEFAULT_MODE' => 'Default Mode'
+        ];
 
         $this->loadPositionsForFormation();
         $this->loadExistingLineup();

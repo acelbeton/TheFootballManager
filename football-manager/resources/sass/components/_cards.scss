@@ -3,9 +3,9 @@
 .card {
     background-color: vars.$color-background;
     border-radius: vars.$border-radius-md;
-    border: none;
     box-shadow: vars.$shadow-md;
     overflow: hidden;
+    border: 1px solid vars.$color-border;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     padding: vars.$spacing-md !important;
 
@@ -17,6 +17,7 @@
     &:hover {
         transform: translateY(-5px);
         box-shadow: vars.$shadow-lg;
+        border-color: vars.$color-primary;
     }
 }
 

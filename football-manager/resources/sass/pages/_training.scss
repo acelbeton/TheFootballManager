@@ -1,0 +1,299 @@
+@use '../abstract/variables' as vars;
+
+.training-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: vars.$spacing-lg;
+    margin-bottom: vars.$spacing-xl;
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
+
+    .training-section {
+        &.team-training {
+            .card {
+                height: 100%;
+            }
+        }
+
+        &.history {
+            .training-history-list {
+                li {
+                    transition: background-color 0.2s ease;
+
+                    &:hover {
+                        background-color: rgba(vars.$color-section-background, 0.5);
+                    }
+                }
+            }
+        }
+    }
+}
+
+.individual-training-section {
+    .player-card-collection {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)) !important;
+        gap: vars.$spacing-md;
+        margin-bottom: vars.$spacing-lg;
+
+        @media (max-width: 576px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .training-action {
+        display: flex;
+        justify-content: center;
+    }
+}
+
+.player-card-wrapper {
+    width: 100% !important;
+    max-width: none !important;
+
+    .player-card {
+        position: relative;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: vars.$color-background;
+        border: 2px solid vars.$color-border;
+        border-radius: vars.$border-radius-lg;
+        transition: all 0.3s ease;
+        box-shadow: vars.$shadow-sm;
+        overflow: hidden;
+        padding: 0 !important;
+
+        &.has-stat-changes {
+            overflow: visible;
+            z-index: 2;
+
+            .player-card-header {
+                background: linear-gradient(135deg, rgba(vars.$color-highlight, 0.2), transparent);
+            }
+        }
+
+        .training-result-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: vars.$color-highlight;
+            color: white;
+            padding: vars.$spacing-xs vars.$spacing-sm;
+            border-radius: vars.$border-radius-md;
+            font-size: vars.$font-size-sm;
+            font-weight: vars.$font-weight-semi-bold;
+            box-shadow: vars.$shadow-sm;
+            animation: pulse 2s infinite;
+            z-index: 3;
+
+            i {
+                margin-right: vars.$spacing-xs;
+            }
+        }
+
+        .stat-improved {
+            background: rgba(vars.$color-highlight, 0.1) !important;
+            border: 1px solid rgba(vars.$color-highlight, 0.3) !important;
+
+            .player-stat-value {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: vars.$spacing-xs;
+            }
+
+            .stat-improvement {
+                color: vars.$color-highlight;
+                font-size: vars.$font-size-sm;
+                font-weight: vars.$font-weight-bold;
+                animation: fadeIn 0.5s ease-in-out;
+            }
+        }
+
+        .condition-change {
+            color: vars.$color-warning;
+            margin-left: vars.$spacing-xs;
+            font-weight: vars.$font-weight-bold;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        &.selected {
+            border-color: vars.$color-primary;
+            box-shadow: 0 0 0 3px rgba(vars.$color-primary, 0.2);
+            background: rgba(vars.$color-primary, 0.05);
+            transform: translateY(-4px);
+        }
+
+        .player-card-header {
+            padding: vars.$spacing-md;
+            background: linear-gradient(135deg, rgba(vars.$color-section-background, 0.8), transparent);
+            border-bottom: 1px solid vars.$color-border;
+
+            .header-top {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: vars.$spacing-xs;
+            }
+
+            .position-badge {
+                background: rgba(vars.$color-primary, 0.1);
+                color: vars.$color-primary;
+                padding: vars.$spacing-xs vars.$spacing-sm;
+                border-radius: vars.$border-radius-xl;
+                font-size: vars.$font-size-sm;
+                font-weight: vars.$font-weight-semi-bold;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+
+            .player-name {
+                font-family: vars.$font-heading;
+                font-size: vars.$font-size-md;
+                font-weight: vars.$font-weight-semi-bold;
+                color: vars.$color-text;
+                margin: 0;
+                line-height: 1.2;
+            }
+        }
+
+        .card-body {
+            padding: vars.$spacing-md;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+
+            .stats-grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: vars.$spacing-sm;
+                margin-bottom: vars.$spacing-md;
+
+                .player-stat-item {
+                    background: rgba(vars.$color-section-background, 0.5);
+                    border-radius: vars.$border-radius-sm;
+                    padding: vars.$spacing-sm;
+                    height: 60px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s ease;
+                    border: 1px solid transparent;
+
+                    &:hover {
+                        transform: translateY(-2px);
+                        background: rgba(vars.$color-section-background, 0.8);
+                        border-color: rgba(vars.$color-primary, 0.1);
+                    }
+
+                    .stat-content {
+                        text-align: center;
+                    }
+
+                    .player-stat-label {
+                        font-size: vars.$font-size-stat;
+                        color: rgba(vars.$color-text, 0.7);
+                        letter-spacing: 0.05em;
+                        display: block;
+                        margin-bottom: vars.$spacing-xs;
+                        text-transform: uppercase;
+                    }
+
+                    .player-stat-value {
+                        font-family: vars.$font-mono;
+                        font-size: vars.$font-size-md;
+                        font-weight: vars.$font-weight-bold;
+                        color: vars.$color-primary;
+                        line-height: 1;
+                        display: block;
+                    }
+                }
+            }
+
+            .condition-meter {
+                margin-top: auto;
+                border-top: 1px solid vars.$color-section-background;
+                padding-top: vars.$spacing-sm;
+
+                .progress {
+                    height: 8px;
+                    border-radius: vars.$border-radius-xl;
+                    background: rgba(vars.$color-border, 0.2);
+                    overflow: hidden;
+                }
+            }
+        }
+
+        &:hover:not(.selected) {
+            box-shadow: vars.$shadow-md;
+            transform: translateY(-3px);
+            border-color: rgba(vars.$color-primary, 0.3);
+        }
+    }
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(vars.$color-highlight, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 5px rgba(vars.$color-highlight, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(vars.$color-highlight, 0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.team-training-results {
+    border-top: 1px solid vars.$color-section-background;
+    padding-top: vars.$spacing-md;
+    margin-top: vars.$spacing-md;
+
+    h5 {
+        color: vars.$color-primary;
+        font-family: vars.$font-heading;
+        font-weight: vars.$font-weight-semi-bold;
+        margin-bottom: vars.$spacing-sm;
+    }
+
+    .team-improvements-summary {
+        p {
+            display: flex;
+            align-items: center;
+            gap: vars.$spacing-xs;
+        }
+
+        .badge {
+            font-size: vars.$font-size-md;
+        }
+    }
+
+    .improved-players-details {
+        margin-top: vars.$spacing-md;
+
+        .player-card-collection {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: vars.$spacing-md;
+            width: 100%;
+
+            @media (max-width: 576px) {
+                grid-template-columns: 1fr;
+            }
+        }
+    }
+}

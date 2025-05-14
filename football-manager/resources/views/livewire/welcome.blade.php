@@ -3,8 +3,12 @@
         <div class="container">
             <h1>Master the Art of Football Management</h1>
             <p>FootballManager is a deep, text-based football management simulation where your decisions shape the destiny of your club. Build your legacy through smart transfers, tactical innovations, and strategic thinking.</p>
-            <a wire:navigate href="/register" class="button button-secondary">Play Now</a> {{-- TODO lecserélni valamire--}}
-            <a wire:navigate href="/register" class="button button-primary">Register</a>
+            <a wire:navigate href="/dashboard" class="button button-secondary">Play Now</a>
+            @auth
+
+            @else
+                <a wire:navigate href="/register" class="button button-primary">Register</a>
+            @endauth
         </div>
     </section>
 

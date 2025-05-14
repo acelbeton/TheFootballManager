@@ -21,7 +21,7 @@ class TrainingDashboard extends Component
     public $trainingHistory;
     public $players;
     public $statisticNames;
-//    public $lastTrainingResults;
+    public $trainingResults = [];
 
     protected $rules = [
         'selectedPlayers' => 'max:2',
@@ -39,7 +39,7 @@ class TrainingDashboard extends Component
             ->trainingSession()
             ->latest()
             ->limit(5)
-            ->get(['id', 'type', 'participants', 'created_at']); // Explicitly select needed columns
+            ->get(['id', 'type', 'participants', 'created_at']);
     }
 
     public function updateCount($count)
@@ -51,13 +51,13 @@ class TrainingDashboard extends Component
     {
         if ($this->hasTrainedTeamToday) return;
 
-        TrainingService::trainTeam();
+        $this->trainingResults = TrainingService::trainTeam();
         $this->hasTrainedTeamToday = true;
 
         $this->players = $this->players->fresh();
         $this->refreshTrainingHistory();
 
-        session()->flash('team-training', 'Team training completed!');
+        $this->dispatch('training-completed');
     }
 
     public function trainIndividuals()
@@ -66,20 +66,26 @@ class TrainingDashboard extends Component
 
         if ($this->hasTrainedIndividualToday) return;
 
-        TrainingService::trainPlayer($this->selectedPlayers);
+        $this->trainingResults = TrainingService::trainPlayer($this->selectedPlayers);
         $this->hasTrainedIndividualToday = true;
 
         $this->players = $this->players->fresh();
         $this->refreshTrainingHistory();
-        $this->reset('selectedPlayers');
 
-        session()->flash('individual-training', 'Individual training completed!');
+        $this->dispatch('training-completed');
+        $this->reset('selectedPlayers');
+    }
+
+    public function resetTrainingResults()
+    {
+        $this->trainingResults = [];
     }
 
     public function mount()
     {
         $team = Auth::user()->currentTeam;
         $this->selectedPlayers = [];
+        $this->trainingResults = [];
 
         $this->players = $team->players()
             ->with('statistics')

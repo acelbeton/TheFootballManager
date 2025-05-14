@@ -8,6 +8,7 @@ use App\Http\Enums\PrizeMoney;
 use App\Models\League;
 use App\Models\Player;
 use App\Models\Season;
+use App\Models\Standing;
 use App\Models\Statistic;
 use App\Models\Team;
 use App\Services\LeagueManagerService;
@@ -71,6 +72,16 @@ class CreateTeam extends Component
         $this->lineupService->createDefaultLineup($team);
 
         $this->leagueManager->setupLeague($league);
+
+        $standing = Standing::where('team_id', $team->getKey())->first();
+
+        if (!$standing)
+        {
+            Standing::create([
+               'season_id' => $season->getKey(),
+               'team_id' => $team->getKey(),
+            ]);
+        }
 
         $this->redirect(route('dashboard'), navigate: true);
     }

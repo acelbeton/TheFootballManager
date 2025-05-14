@@ -8,58 +8,68 @@
             </div>
         </div>
     @else
-        <div class="dashboard-header">
-            <h1>{{ $team->name }} Dashboard</h1>
-            <div class="team-meta">
-                <div class="team-budget">
-                    <span class="label">Budget:</span>
-                    <span class="value">{{ number_format($team->team_budget) }} €</span>
-                </div>
-                <div class="team-rating">
-                    <span class="label">Team Rating:</span>
-                    <span class="value">{{ $team->team_rating }}/100</span>
-                </div>
-                <div class="team-tactic">
-                    <span class="label">Current Tactic:</span>
-                    <span class="value">{{ str_replace('_', ' ', $team->current_tactic) }}</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="dashboard-stats-summary">
-            <div class="position-badge position-{{ $teamPerformance['position'] }}">
-                <span class="position-number">{{ $teamPerformance['position'] }}</span>
-                <span class="position-label">{{ $teamPerformance['position'] == 1 ? 'st' : ($teamPerformance['position'] == 2 ? 'nd' : ($teamPerformance['position'] == 3 ? 'rd' : 'th')) }}</span>
-            </div>
-            <div class="stats-pills">
-                <div class="stat-pill">
-                    <span class="label">Played</span>
-                    <span class="value">{{ $teamPerformance['matches_played'] }}</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="label">Won</span>
-                    <span class="value">{{ $teamPerformance['matches_won'] }}</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="label">Drawn</span>
-                    <span class="value">{{ $teamPerformance['matches_drawn'] }}</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="label">Lost</span>
-                    <span class="value">{{ $teamPerformance['matches_lost'] }}</span>
-                </div>
-                <div class="stat-pill">
-                    <span class="label">Goals</span>
-                    <span class="value">{{ $teamPerformance['goals_scored'] }}:{{ $teamPerformance['goals_conceded'] }}</span>
-                </div>
-                <div class="stat-pill stat-pill-highlight">
-                    <span class="label">Points</span>
-                    <span class="value">{{ $teamPerformance['points'] }}</span>
+        <div class="dashboard-header section-card">
+            <div class="header-content">
+                <h1>{{ $team->name }}</h1>
+                <div class="team-meta">
+                    <div class="team-budget">
+                        <span class="label">Budget:</span>
+                        <span class="value">{{ number_format($team->team_budget) }} €</span>
+                    </div>
+                    <div class="team-rating">
+                        <span class="label">Team Rating:</span>
+                        <span class="value">{{ $team->team_rating }}/100</span>
+                    </div>
+                    <div class="team-tactic">
+                        <span class="label">Current Tactic:</span>
+                        <span class="value">{{ str_replace('_', ' ', $team->current_tactic) }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div class="dashboard-grid">
+        <div class="dashboard-stats-summary section-card">
+            <div class="section-header">
+                <h2>Team Performance</h2>
+            </div>
+            <div class="stats-content">
+                <div class="position-badge position-{{ $teamPerformance['position'] }}">
+                    <span class="position-number">{{ $teamPerformance['position'] }}</span>
+                    <span class="position-label">{{ $teamPerformance['position'] == 1 ? 'st' : ($teamPerformance['position'] == 2 ? 'nd' : ($teamPerformance['position'] == 3 ? 'rd' : 'th')) }}</span>
+                </div>
+                <div class="stats-pills">
+                    <div class="stat-pill">
+                        <span class="label">Played</span>
+                        <span class="value">{{ $teamPerformance['matches_played'] }}</span>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="label">Won</span>
+                        <span class="value">{{ $teamPerformance['matches_won'] }}</span>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="label">Drawn</span>
+                        <span class="value">{{ $teamPerformance['matches_drawn'] }}</span>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="label">Lost</span>
+                        <span class="value">{{ $teamPerformance['matches_lost'] }}</span>
+                    </div>
+                    <div class="stat-pill">
+                        <span class="label">Goals</span>
+                        <span class="value">{{ $teamPerformance['goals_scored'] }}:{{ $teamPerformance['goals_conceded'] }}</span>
+                    </div>
+                    <div class="stat-pill stat-pill-highlight">
+                        <span class="label">Points</span>
+                        <span class="value">{{ $teamPerformance['points'] }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-card">
+            <div class="section-header">
+                <h2>Quick Actions</h2>
+            </div>
             <div class="action-cards">
                 <div class="row">
                     <div class="col-md-4">
@@ -125,14 +135,16 @@
                     </div>
                 </div>
             </div>
+        </div>
 
+        <div class="dashboard-grid">
             <div class="row">
                 <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Upcoming Matches</h3>
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2>Upcoming Matches</h2>
                         </div>
-                        <div class="card-body">
+                        <div class="section-body">
                             @if($upcomingMatches->count() > 0)
                                 <div class="match-list">
                                     @foreach($upcomingMatches as $match)
@@ -152,9 +164,6 @@
                                         </div>
                                     @endforeach
                                 </div>
-                                <div class="card-footer text-center">
-                                    <a href="#" class="view-all-link">View All Fixtures</a>
-                                </div>
                             @else
                                 <div class="no-data-message">
                                     <p>No upcoming matches scheduled</p>
@@ -165,11 +174,11 @@
                 </div>
 
                 <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">League Table</h3>
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2>League Table</h2>
                         </div>
-                        <div class="card-body">
+                        <div class="section-body">
                             @if($leagueStandings && $leagueStandings->count() > 0)
                                 <div class="league-info">
                                     <div class="league-name">{{ $leagueInfo['name'] }}</div>
@@ -184,7 +193,7 @@
                                         <th>W</th>
                                         <th>D</th>
                                         <th>L</th>
-                                        <th>GF:GA</th>
+                                        <th>Points / Week</th>
                                         <th>PTS</th>
                                     </tr>
                                     </thead>
@@ -197,15 +206,12 @@
                                             <td>{{ $standing->matches_won }}</td>
                                             <td>{{ $standing->matches_drawn }}</td>
                                             <td>{{ $standing->matches_lost }}</td>
-                                            <td>{{ $standing->goals_scored }}:{{ $standing->goals_conceded }}</td>
+                                            <td class="ppw-cell">{{ number_format($standing->points_per_week_avg, 1) }}</td>
                                             <td class="points-cell">{{ $standing->points }}</td>
                                         </tr>
                                     @endforeach
                                     </tbody>
                                 </table>
-                                <div class="card-footer text-center">
-                                    <a href="#" class="view-all-link">View Full Table</a>
-                                </div>
                             @else
                                 <div class="no-data-message">
                                     <p>No league data available</p>
@@ -215,13 +221,14 @@
                     </div>
                 </div>
             </div>
+
             <div class="row mt-4">
                 <div class="col-12">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Squad Overview</h3>
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2>Squad Overview</h2>
                         </div>
-                        <div class="card-body">
+                        <div class="section-body">
                             <div class="row">
                                 <div class="col-md-6">
                                     <div class="squad-summary">
@@ -257,7 +264,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="text-center mt-4">
+                            <div class="section-footer text-center">
                                 <a href="#" class="button button-primary">Manage Squad</a>
                             </div>
                         </div>

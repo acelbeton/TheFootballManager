@@ -5,15 +5,23 @@
 @endphp
 
 <div class="team-management-container">
-    <div class="team-management-header">
-        <h1>Default Team Lineup</h1>
-        <div class="team-info">
-            <h3>{{ $team->name }}</h3>
-            <p class="team-description">This lineup will be used for all upcoming matches</p>
+    <div class="dashboard-header section-card">
+        <div class="header-content">
+            <h1>Default Team Lineup</h1>
+            <div class="team-meta">
+                <div class="team-rating">
+                    <span class="label">Team Rating:</span>
+                    <span class="value">{{ $team->team_rating }}/100</span>
+                </div>
+                <div class="team-tactic">
+                    <span class="label">Team Name:</span>
+                    <span class="value">{{ $team->name }}</span>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="instructions-panel">
+    <div class="instructions-panel m-4">
         <div class="alert alert-info">
             <i class="bi bi-info-circle me-2"></i>
             <span>
@@ -28,24 +36,22 @@
     <div class="tactics-selection">
         <div class="row">
             <div class="col-md-6">
-                <div class="input-group">
-                    <select wire:model.live="selectedFormationId" wire:change="changeFormation" class="input">
-                        @foreach($formations as $formation)
-                            <option value="{{ $formation->getKey() }}">{{ $formation->name }}</option>
-                        @endforeach
-                    </select>
-                    <label class="input-label">Formation</label>
-                </div>
+                <x-custom-select
+                    label="Formation"
+                    name="formation"
+                    :options="$formations"
+                    wire:model.live="selectedFormationId"
+                    wire:change="changeFormation"
+                />
             </div>
             <div class="col-md-6">
-                <div class="input-group">
-                    <select wire:model.live="selectedTactic" wire:change="changeTactic" class="input">
-                        <option value="ATTACK_MODE">Attack Mode</option>
-                        <option value="DEFEND_MODE">Defend Mode</option>
-                        <option value="DEFAULT_MODE">Default Mode</option>
-                    </select>
-                    <label class="input-label">Team Tactic</label>
-                </div>
+                <x-custom-select
+                    label="Team Tactic"
+                    name="team_tactic"
+                    :options="$teamTactic"
+                    wire:model.live="selectedTactic"
+                    wire:change="changeTactic"
+                />
             </div>
         </div>
     </div>

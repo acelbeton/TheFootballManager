@@ -43,7 +43,7 @@ class MatchSimulator
         $homeTeam = Team::findOrFail($match->home_team_id);
         $awayTeam = Team::findorFail($match->away_team_id);
 
-        list($homeScore, $awayScore, $events) =  $this->calculateMatchResult($homeTeam, $awayTeam);
+        list($homeScore, $awayScore, $events) = $this->calculateMatchResult($homeTeam, $awayTeam);
 
         DB::transaction(function() use ($match, $homeTeam, $awayTeam, $homeScore, $awayScore, $events) {
             $match->update([
@@ -52,9 +52,7 @@ class MatchSimulator
             ]);
 
             $this->recordPlayerPerformances($match, $homeTeam, $awayTeam, $events);
-
             $this->updateStandings($match);
-
             $this->updatePlayerConditions($homeTeam, $awayTeam);
         });
 
@@ -63,192 +61,152 @@ class MatchSimulator
 
     public function calculateMatchResult(Team $homeTeam, Team $awayTeam): array
     {
-        $homeStrength = $this->calculateTeamStrengthByPosition($homeTeam);
-        $awayStrength = $this->calculateTeamStrengthByPosition($awayTeam);
-
-        // otthoni előny
-        $homeStrength['overall'] *= 1.1;
-
-        $homeStrength = $this->applyTacticalAdjustment($homeStrength, $homeTeam->current_tactic, $awayTeam->current_tactic);
-        $awayStrength = $this->applyTacticalAdjustment($awayStrength, $awayTeam->current_tactic, $homeTeam->current_tactic);
-
-        $expectedHomeGoals = $this->calculateExpectedGoals($homeStrength['attack'], $awayStrength['defense']);
-        $expectedAwayGoals = $this->calculateExpectedGoals($awayStrength['attack'], $homeStrength['defense']);
-
+        $homeAttack = $this->calculateTeamAttack($homeTeam);
+        $homeDefense = $this->calculateTeamDefense($homeTeam);
+        $awayAttack = $this->calculateTeamAttack($awayTeam);
+        $awayDefense = $this->calculateTeamDefense($awayTeam);
+        $homeAttack *= 1.1;
+        $homeDefense *= 1.05;
+        $this->applyTactics($homeTeam, $awayTeam, $homeAttack, $homeDefense, $awayAttack, $awayDefense);
+        $expectedHomeGoals = ($homeAttack / $awayDefense) * 1.5;
+        $expectedAwayGoals = ($awayAttack / $homeDefense) * 1.2;
+        $expectedHomeGoals *= (0.7 + (mt_rand() / mt_getrandmax() * 0.6));
+        $expectedAwayGoals *= (0.7 + (mt_rand() / mt_getrandmax() * 0.6));
         $homeScore = $this->simulateGoalsScored($expectedHomeGoals);
         $awayScore = $this->simulateGoalsScored($expectedAwayGoals);
-
-        $events = $this->generateMatchEvents($homeTeam, $awayTeam, $homeScore, $awayScore, $homeStrength, $awayStrength);
+        $events = $this->generateMatchEvents($homeTeam, $awayTeam, $homeScore, $awayScore);
 
         return [$homeScore, $awayScore, $events];
     }
 
-    private function calculateTeamStrengthByPosition(Team $team): array
+    private function calculateTeamAttack(Team $team): float
     {
-        $attack = 0;
-        $defense = 0;
-        $midfield = 0;
-        $goalkeeper = 0;
+        $totalAttack = 0;
+        $count = 0;
 
-        $attackCount = 0;
-        $defenseCount = 0;
-        $midfieldCount = 0;
-        $goalkeeperCount = 0;
-
-        foreach($team->players as $player) {
-            if ($player->is_injured) {
-                continue;
-            }
+        foreach ($team->players as $player) {
+            if ($player->is_injured) continue;
 
             $stats = $player->statistic;
-            if (!$stats) {
-                continue;
-            }
+            if (!$stats) continue;
 
+            $contribution = 0;
             $conditionFactor = $player->condition / 100;
 
             switch ($player->position) {
                 case 'STRIKER':
-                case 'WINGER':
-                    $attackerRating = (
-                        ($stats->attacking * 0.5) +
-                        ($stats->technical_skills * 0.3) +
-                        ($stats->speed * 0.1) +
-                        ($stats->tactical_sense * 0.1)
-                    ) * $conditionFactor;
+                    $contribution = $stats->attacking * 1.0 * $conditionFactor;
+                    $totalAttack += $contribution;
+                    $count += 1;
+                    break;
 
-                    $attack += $attackerRating;
-                    $attackCount++;
+                case 'WINGER':
+                    $contribution = $stats->attacking * 0.8 * $conditionFactor;
+                    $totalAttack += $contribution;
+                    $count += 0.8;
                     break;
 
                 case 'MIDFIELDER':
-                    $midfielderRating = (
-                            ($stats->technical_skills * 0.3) +
-                            ($stats->tactical_sense * 0.3) +
-                            ($stats->attacking * 0.2) +
-                            ($stats->defending * 0.1) +
-                            ($stats->stamina * 0.1)
-                    ) * $conditionFactor;
-
-                    $midfield += $midfielderRating;
-                    $midfieldCount++;
-
-                    $attack += $midfielderRating * 0.3;
-                    $attackCount += 0.3;
-                    $defense += $midfielderRating * 0.3;
-                    $defenseCount += 0.3;
-                    break;
-
-                case 'FULLBACK':
-                case 'CENTRE_BACK':
-                    $defenderRating = (
-                            ($stats->defending * 0.5) +
-                            ($stats->tactical_sense * 0.2) +
-                            ($stats->stamina * 0.1) +
-                            ($stats->technical_skills * 0.1) +
-                            ($stats->speed * 0.1)
-                    ) * $conditionFactor;
-
-                    $defense += $defenderRating;
-                    $defenseCount++;
-                    break;
-
-                case 'GOALKEEPER':
-                    $goalkeeperRating = (
-                        ($stats->defending * 0.7) +
-                        ($stats->tactical_sense * 0.2) +
-                        ($stats->technical_skills * 0.1)
-                    ) * $conditionFactor;
-
-                    $goalkeeper += $goalkeeperRating;
-                    $goalkeeperCount = 1;
+                    $contribution = $stats->attacking * 0.5 * $conditionFactor;
+                    $totalAttack += $contribution;
+                    $count += 0.5;
                     break;
             }
         }
 
-        $attackRating = $attackCount > 0 ? $attack / $attackCount : 0;
-        $defenseRating = $defenseCount > 0 ? $defense / $defenseCount : 0;
-        $midfielderRating = $midfieldCount > 0 ? $midfield / $midfieldCount : 0;
-        $goalkeeperRating = $goalkeeperCount > 0 ? $goalkeeper : 0;
-
-        $totalDefense = ($defenseRating * 0.7) + ($goalkeeperRating * 0.3);
-
-        $overallRating = ($attackRating * 0.3) + ($midfielderRating * 0.4) + ($totalDefense * 0.3);
-
-        return [
-            'attack' => $attackRating,
-            'midfield' => $midfielderRating,
-            'defense' => $defenseRating,
-            'goalkeeper' => $goalkeeperRating,
-            'total_defense' => $totalDefense,
-            'overall' => $overallRating
-        ];
+        return $count > 0 ? $totalAttack / $count : 50;
     }
 
-    private function applyTacticalAdjustment(array $teamStrength, string $ownTactic, string $opponentTactic): array
+    private function calculateTeamDefense(Team $team): float
     {
-        $modified = $teamStrength;
+        $totalDefense = 0;
+        $count = 0;
 
-        switch ($ownTactic) {
-            case 'ATTACK_MODE':
-                $modified['attack'] *= 1.2;
-                $modified['defense'] *= 0.9;
-                $modified['overall'] *= 1.05;
+        foreach ($team->players as $player) {
+            if ($player->is_injured) continue;
 
-                // Gyengébb defend mode ellen
-                if ($opponentTactic === 'DEFEND_MODE') {
-                    $modified['attack'] *= 0.9;
-                }
-                break;
+            $stats = $player->statistic;
+            if (!$stats) continue;
 
-            case 'DEFEND_MODE':
-                $modified['attack'] *= 0.85;
-                $modified['defense'] *= 1.25;
-                $modified['overall'] *= 1.0;
+            $contribution = 0;
+            $conditionFactor = $player->condition / 100;
 
-                // Erősebb attack mode ellen
-                if ($opponentTactic === 'ATTACK_MODE') {
-                    $modified['defense'] *= 1.1;
-                }
-                break;
+            switch ($player->position) {
+                case 'GOALKEEPER':
+                    $contribution = $stats->defending * 1.5 * $conditionFactor;
+                    $totalDefense += $contribution;
+                    $count += 1.5;
+                    break;
 
-            case 'DEFAULT_MODE':
-                // balanced
-                $modified['attack'] *= 1.05;
-                $modified['defense'] *= 1.05;
-                $modified['overall'] *= 1.05;
-                break;
+                case 'CENTRE_BACK':
+                    $contribution = $stats->defending * 1.0 * $conditionFactor;
+                    $totalDefense += $contribution;
+                    $count += 1;
+                    break;
+
+                case 'FULLBACK':
+                    $contribution = $stats->defending * 0.8 * $conditionFactor;
+                    $totalDefense += $contribution;
+                    $count += 0.8;
+                    break;
+
+                case 'MIDFIELDER':
+                    $contribution = $stats->defending * 0.4 * $conditionFactor;
+                    $totalDefense += $contribution;
+                    $count += 0.4;
+                    break;
+            }
         }
 
-        return $modified;
+        return $count > 0 ? $totalDefense / $count : 50;
     }
 
-    private function calculateExpectedGoals(float $attackRating, float $defenseRating): float
+    private function applyTactics(Team $homeTeam, Team $awayTeam, float &$homeAttack, float &$homeDefense, float &$awayAttack, float &$awayDefense): void
     {
-        $baseGoals = $attackRating / 25;
-        $defenseFactor = max(0.3, min(0.9, 1 - ($defenseRating / 150)));
-        $expectedGoals = $baseGoals * $defenseFactor;
-        $randomFactor = 0.8 + (mt_rand() / mt_getrandmax() * 0.4);
+        if ($homeTeam->current_tactic === 'ATTACK_MODE') {
+            $homeAttack *= 1.2;
+            $homeDefense *= 0.9;
+        } elseif ($homeTeam->current_tactic === 'DEFEND_MODE') {
+            $homeAttack *= 0.9;
+            $homeDefense *= 1.2;
+        }
 
-        return $expectedGoals * $randomFactor;
+        if ($awayTeam->current_tactic === 'ATTACK_MODE') {
+            $awayAttack *= 1.2;
+            $awayDefense *= 0.9;
+        } elseif ($awayTeam->current_tactic === 'DEFEND_MODE') {
+            $awayAttack *= 0.9;
+            $awayDefense *= 1.2;
+        }
+
+        if ($homeTeam->current_tactic === 'ATTACK_MODE' && $awayTeam->current_tactic === 'DEFEND_MODE') {
+            $homeAttack *= 0.9;
+        }
+
+        if ($awayTeam->current_tactic === 'ATTACK_MODE' && $homeTeam->current_tactic === 'DEFEND_MODE') {
+            $awayAttack *= 0.9;
+        }
     }
 
     private function simulateGoalsScored(float $expectedGoals): int
     {
-        $lambda = $expectedGoals;
-        $L = exp(-$lambda);
-        $k = 0;
-        $p = 1.0;
+        $goals = 0;
+        $probability = $expectedGoals / 3;
 
-        do {
-            $k++;
-            $p *= mt_rand() / mt_getrandmax();
-        } while ($p > $L);
+        for ($i = 0; $i < 5; $i++) {
+            if (mt_rand() / mt_getrandmax() < $probability) {
+                $goals++;
+            }
+        }
 
-        return max(0, $k - 1);
+        if (mt_rand(1, 100) <= 5 && $goals > 0) {
+            $goals += mt_rand(1, 2);
+        }
+
+        return $goals;
     }
 
-    private function generateMatchEvents(Team $homeTeam, Team $awayTeam, int $homeScore, int $awayScore, array $homeStrength, array $awayStrength): array
+    private function generateMatchEvents(Team $homeTeam, Team $awayTeam, int $homeScore, int $awayScore): array
     {
         $events = [
             'home_goals' => [],
@@ -259,61 +217,117 @@ class MatchSimulator
             'player_ratings' => []
         ];
 
-        $homeAttackers = $this->getOffensivePlayers($homeTeam);
+        $this->generateGoals($events, $homeTeam, $homeScore, 'home');
+        $this->generateGoals($events, $awayTeam, $awayScore, 'away');
 
-        for ($i = 0; $i < $homeScore; $i++) {
-            $minute = $this->generateRealisticMinute($i, $homeScore);
-            $scorer = $this->selectPlayerByWeightedStats($homeAttackers, ['attacking', 'technical_skills']);
-            $assister = $this->selectPlayerByWeightedStats($homeAttackers->where('id', '!=', $scorer->getKey()), ['technical_skills', 'tactical_sense']);
+        $totalCards = mt_rand(0, 4);
+        $this->generateCards($events, $homeTeam, $awayTeam, $totalCards);
 
-            $events['home_goals'][] = [
+        if (mt_rand(1, 100) <= 15) {
+            $this->generateInjury($events, mt_rand(0, 1) ? $homeTeam : $awayTeam);
+        }
+
+        $this->calculateSimplePlayerRatings($events, $homeTeam, $awayTeam, $homeScore, $awayScore);
+
+        return $events;
+    }
+
+    private function generateGoals(array &$events, Team $team, int $score, string $side): void
+    {
+        $offensivePlayers = $team->players
+            ->where('is_injured', false)
+            ->whereIn('position', ['STRIKER', 'WINGER', 'MIDFIELDER']);
+
+        if ($offensivePlayers->isEmpty() || $score <= 0) {
+            return;
+        }
+
+        for ($i = 0; $i < $score; $i++) {
+            $weights = [];
+            foreach ($offensivePlayers as $player) {
+                switch ($player->position) {
+                    case 'STRIKER':
+                        $weights[$player->id] = 10;
+                        break;
+                    case 'WINGER':
+                        $weights[$player->id] = 5;
+                        break;
+                    case 'MIDFIELDER':
+                        $weights[$player->id] = 3;
+                        break;
+                    default:
+                        $weights[$player->id] = 1;
+                }
+            }
+
+            $scorer = $this->selectPlayerByWeights($offensivePlayers, $weights);
+
+            $assister = null;
+            if (mt_rand(1, 100) <= 70) {
+                $possibleAssisters = $offensivePlayers->where('id', '!=', $scorer->id);
+                if (!$possibleAssisters->isEmpty()) {
+                    $assister = $possibleAssisters->random();
+                }
+            }
+
+            $minute = mt_rand(1, 90);
+            if (mt_rand(1, 100) <= 60) {
+                $minute = mt_rand(45, 90);
+            }
+
+            $events["{$side}_goals"][] = [
                 'minute' => $minute,
-                'scorer_id' => $scorer->getKey(),
+                'scorer_id' => $scorer->id,
                 'scorer_name' => $scorer->name,
-                'assister_id' => $assister ? $assister->getKey() : null,
+                'assister_id' => $assister ? $assister->id : null,
                 'assister_name' => $assister ? $assister->name : null,
             ];
         }
 
-        $awayAttackers = $this->getOffensivePlayers($awayTeam);
-        for ($i = 0; $i < $awayScore; $i++) {
-            $minute = $this->generateRealisticMinute($i, $awayScore);
-            $scorer = $this->selectPlayerByWeightedStats($awayAttackers, ['attacking', 'technical_skills']);
-            $assister = $this->selectPlayerByWeightedStats($awayAttackers->where('id', '!=', $scorer->getKey()), ['technical_skills', 'tactical_sense']);
+        usort($events["{$side}_goals"], function($a, $b) {
+            return $a['minute'] <=> $b['minute'];
+        });
+    }
 
-            $events['away_goals'][] = [
+    private function generateCards(array &$events, Team $homeTeam, Team $awayTeam, int $cardCount): void
+    {
+        for ($i = 0; $i < $cardCount; $i++) {
+            $isHomeTeam = mt_rand(0, 1) == 1;
+            $team = $isHomeTeam ? $homeTeam : $awayTeam;
+            $side = $isHomeTeam ? 'home' : 'away';
+
+            $defenders = $team->players
+                ->where('is_injured', false)
+                ->whereIn('position', ['CENTRE_BACK', 'FULLBACK', 'MIDFIELDER']);
+
+            if ($defenders->isEmpty()) {
+                continue;
+            }
+
+            $player = $defenders->random();
+            $minute = mt_rand(20, 85);
+
+            $events['yellow_cards'][] = [
                 'minute' => $minute,
-                'scorer_id' => $scorer->getKey(),
-                'scorer_name' => $scorer->name,
-                'assister_id' => $assister ? $assister->getKey() : null,
-                'assister_name' => $assister ? $assister->name : null,
+                'team' => $side,
+                'player_id' => $player->id,
+                'player_name' => $player->name,
             ];
         }
 
-        // Sárga lapok (1-5 meccsenként)
-        $numYellowCards = min(10, max(0, $this->getRandomNormal(3, 1.5)));
-        $this->generateCards($events['yellow_cards'], $homeTeam, $awayTeam, $numYellowCards);
+        if (mt_rand(1, 100) <= 5) {
+            if (!empty($events['yellow_cards'])) {
+                $yellowCard = $events['yellow_cards'][array_rand($events['yellow_cards'])];
+                $minute = min(89, $yellowCard['minute'] + mt_rand(5, 20));
 
-        // Piros lapok (0-1 meccsenként)
-        $redCardChance = 15;
-        if (mt_rand(1, 100) <= $redCardChance) {
-            $this->generateCards($events['red_cards'], $homeTeam, $awayTeam, 1);
+                $events['red_cards'][] = [
+                    'minute' => $minute,
+                    'team' => $yellowCard['team'],
+                    'player_id' => $yellowCard['player_id'],
+                    'player_name' => $yellowCard['player_name'],
+                ];
+            }
         }
-
-        $injuryChance = 10; // 10% sérülés esély
-        if (mt_rand(1, 100) <= $injuryChance) {
-            $this->generateInjuries($events['injuries'], $homeTeam, $awayTeam);
-        }
-
-        $this->calculatePlayerRatings($events['player_ratings'], $homeTeam, $awayTeam, $events);
-
-        usort($events['home_goals'], function($a, $b) {
-            return $a['minute'] <=> $b['minute'];
-        });
-
-        usort($events['away_goals'], function($a, $b) {
-            return $a['minute'] <=> $b['minute'];
-        });
 
         usort($events['yellow_cards'], function($a, $b) {
             return $a['minute'] <=> $b['minute'];
@@ -322,244 +336,156 @@ class MatchSimulator
         usort($events['red_cards'], function($a, $b) {
             return $a['minute'] <=> $b['minute'];
         });
-
-        return $events;
     }
 
-    private function generateRealisticMinute(int $goalNumber, int $totalGoals): int
+    private function generateInjury(array &$events, Team $team): void
     {
-        $baseMinute = mt_rand(1, 90);
-
-        if (mt_rand(1, 100) <= 60) {
-            $baseMinute = mt_rand(46, 90);
-
-            if (mt_rand(1, 100) <= 40) {
-                $baseMinute = mt_rand(75, 90);
-
-                if (mt_rand(1, 100) <= 15) {
-                    $baseMinute = mt_rand(90, 94);
-                }
-            }
-        }
-
-        if ($totalGoals > 1) {
-            $avgSpacing = 90 / ($totalGoals + 1);
-            $targetMinute = ($goalNumber + 1) * $avgSpacing;
-
-            $blendFactor = 0.7;
-            $minute = (int)(($baseMinute * (1 - $blendFactor)) + ($targetMinute * $blendFactor));
-
-            return max(1, min(94, $minute));
-        }
-
-        return $baseMinute;
-    }
-
-    private function generateCards(array &$cards, Team $homeTeam, Team $awayTeam, int $count): void
-    {
-        $homePlayers = $homeTeam->players->where('position', '!=', 'GOALKEEPER')
-            ->where('is_injured', false);
-
-        $awayPlayers = $awayTeam->players->where('position', '!=', 'GOALKEEPER')
-            ->where('is_injured', false);
-
-        $homePlayerWeights = [];
-        foreach ($homePlayers as $player) {
-            $weight = 1.0;
-
-            if (in_array($player->position, ['CENTRE_BACK', 'FULLBACK'])) {
-                $weight *= 2.0;
-            } elseif ($player->position === 'MIDFIELDER') {
-                $weight *= 1.5;
-            }
-
-            $stats = $player->statistics;
-            if ($stats) {
-                $weight *= (100 - $stats->technical_skills) / 50;
-            }
-
-            $homePlayerWeights[$player->getKey()] = max(0.5, min(3.0, $weight));
-        }
-
-        $awayPlayerWeights = [];
-        foreach ($awayPlayers as $player) {
-            $weight = 1.0;
-
-            if (in_array($player->position, ['CENTRE_BACK', 'FULLBACK'])) {
-                $weight *= 2.0;
-            } elseif ($player->position === 'MIDFIELDER') {
-                $weight *= 1.5;
-            }
-
-            $stats = $player->statistics;
-            if ($stats) {
-                $weight *= (100 - $stats->technical_skills) / 50;
-            }
-
-            $awayPlayerWeights[$player->getKey()] = max(0.5, min(3.0, $weight));
-        }
-
-        for ($i = 0; $i < $count; $i++) {
-            $isHome = (mt_rand(1, 100) <= 50);
-
-            if ($isHome && !$homePlayers->isEmpty()) {
-                $player = $this->selectPlayerByWeights($homePlayers, $homePlayerWeights);
-                $minute = mt_rand(20, 90);
-
-                $cards[] = [
-                    'minute' => $minute,
-                    'team' => 'home',
-                    'player_id' => $player->getKey(),
-                    'player_name' => $player->name,
-                ];
-            } elseif (!$awayPlayers->isEmpty()) {
-                $player = $this->selectPlayerByWeights($awayPlayers, $awayPlayerWeights);
-                $minute = mt_rand(20, 90);
-
-                $cards[] = [
-                    'minute' => $minute,
-                    'team' => 'away',
-                    'player_id' => $player->getKey(),
-                    'player_name' => $player->name,
-                ];
-            }
-        }
-    }
-
-    private function generateInjuries(array &$injuries, Team $homeTeam, Team $awayTeam): void
-    {
-        $isHome = (mt_rand(1, 100) <= 50);
-
-        $players = $isHome ?
-            $homeTeam->players->where('is_injured', false) :
-            $awayTeam->players->where('is_injured', false);
+        $players = $team->players->where('is_injured', false);
 
         if ($players->isEmpty()) {
             return;
         }
 
-        $playerWeights = [];
+        $weights = [];
         foreach ($players as $player) {
-            $weight = 1.0;
-
-            $stats = $player->statistics;
-            if ($stats) {
-                $weight *= (100 - $stats->stamina) / 50;
-
-                $weight *= (100 - $player->condition) / 50;
-            }
-
-            $playerWeights[$player->id] = max(0.5, min(3.0, $weight));
+            $weights[$player->id] = max(1, 100 - $player->condition);
         }
 
-        $player = $this->selectPlayerByWeights($players, $playerWeights);
-        $minute = mt_rand(1, 90);
+        $player = $this->selectPlayerByWeights($players, $weights);
+        $minute = mt_rand(15, 80);
 
         $player->is_injured = true;
         $player->save();
 
-        $injuries[] = [
+        $events['injuries'][] = [
             'minute' => $minute,
-            'team' => $isHome ? 'home' : 'away',
+            'team' => $team->id == $player->team_id ? 'home' : 'away',
             'player_id' => $player->id,
             'player_name' => $player->name,
         ];
     }
 
-    private function calculatePlayerRatings(array &$ratings, Team $homeTeam, Team $awayTeam, array $events): void
+    private function calculateSimplePlayerRatings(array &$events, Team $homeTeam, Team $awayTeam, int $homeScore, int $awayScore): void
     {
-        $playerRatings = [];
+        $ratings = [];
 
         foreach ($homeTeam->players as $player) {
             if ($player->is_injured) continue;
 
-            $playerRatings[$player->getKey()] = [
-                'player_id' => $player->getKey(),
+            $rating = 60;
+            if ($homeScore > $awayScore) {
+                $rating += 10;
+            } elseif ($homeScore < $awayScore) {
+                $rating -= 5;
+            } else {
+                $rating += 5;
+            }
+
+            $ratings[$player->id] = [
+                'player_id' => $player->id,
                 'player_name' => $player->name,
                 'team' => 'home',
                 'goals' => 0,
                 'assists' => 0,
-                'base_rating' => 6.0,
+                'rating' => $rating
             ];
         }
 
         foreach ($awayTeam->players as $player) {
             if ($player->is_injured) continue;
 
-            $playerRatings[$player->getKey()] = [
-                'player_id' => $player->getKey(),
+            $rating = 60;
+
+            if ($awayScore > $homeScore) {
+                $rating += 10;
+            } elseif ($awayScore < $homeScore) {
+                $rating -= 5;
+            } else {
+                $rating += 5;
+            }
+
+            $ratings[$player->id] = [
+                'player_id' => $player->id,
                 'player_name' => $player->name,
                 'team' => 'away',
                 'goals' => 0,
                 'assists' => 0,
-                'base_rating' => 6.0,
+                'rating' => $rating
             ];
         }
 
         foreach ($events['home_goals'] as $goal) {
-            if (isset($playerRatings[$goal['scorer_id']])) {
-                $playerRatings[$goal['scorer_id']]['goals']++;
-                $playerRatings[$goal['scorer_id']]['base_rating'] += 0.8;
+            if (isset($ratings[$goal['scorer_id']])) {
+                $ratings[$goal['scorer_id']]['goals']++;
+                $ratings[$goal['scorer_id']]['rating'] += 15;
             }
 
-            if ($goal['assister_id'] && isset($playerRatings[$goal['assister_id']])) {
-                $playerRatings[$goal['assister_id']]['assists']++;
-                $playerRatings[$goal['assister_id']]['base_rating'] += 0.5;
+            if ($goal['assister_id'] && isset($ratings[$goal['assister_id']])) {
+                $ratings[$goal['assister_id']]['assists']++;
+                $ratings[$goal['assister_id']]['rating'] += 10;
             }
         }
 
         foreach ($events['away_goals'] as $goal) {
-            if (isset($playerRatings[$goal['scorer_id']])) {
-                $playerRatings[$goal['scorer_id']]['goals']++;
-                $playerRatings[$goal['scorer_id']]['base_rating'] += 0.8;
+            if (isset($ratings[$goal['scorer_id']])) {
+                $ratings[$goal['scorer_id']]['goals']++;
+                $ratings[$goal['scorer_id']]['rating'] += 15;
             }
 
-            if ($goal['assister_id'] && isset($playerRatings[$goal['assister_id']])) {
-                $playerRatings[$goal['assister_id']]['assists']++;
-                $playerRatings[$goal['assister_id']]['base_rating'] += 0.5;
+            if ($goal['assister_id'] && isset($ratings[$goal['assister_id']])) {
+                $ratings[$goal['assister_id']]['assists']++;
+                $ratings[$goal['assister_id']]['rating'] += 10;
             }
         }
 
         foreach ($events['yellow_cards'] as $card) {
-            if (isset($playerRatings[$card['player_id']])) {
-                $playerRatings[$card['player_id']]['base_rating'] -= 0.3;
+            if (isset($ratings[$card['player_id']])) {
+                $ratings[$card['player_id']]['rating'] -= 5;
             }
         }
 
         foreach ($events['red_cards'] as $card) {
-            if (isset($playerRatings[$card['player_id']])) {
-                $playerRatings[$card['player_id']]['base_rating'] -= 1.5;
+            if (isset($ratings[$card['player_id']])) {
+                $ratings[$card['player_id']]['rating'] -= 20;
             }
         }
 
-        $homeBonus = 0;
-        $awayBonus = 0;
-
-        if ($events['home_goals'] > $events['away_goals']) {
-            $homeBonus = 0.3;
-            $awayBonus = -0.1;
-        } elseif ($events['home_goals'] < $events['away_goals']) {
-            $homeBonus = -0.1;
-            $awayBonus = 0.3;
-        } else {
-            $homeBonus = $awayBonus = 0.1;
+        foreach ($ratings as $playerId => $data) {
+            $ratings[$playerId]['rating'] = max(10, min(100, $data['rating']));
         }
 
-        foreach ($playerRatings as $playerId => $data) {
-            $bonus = ($data['team'] === 'home') ? $homeBonus : $awayBonus;
-            $finalRating = min(10.0, max(1.0, $data['base_rating'] + $bonus));
+        $events['player_ratings'] = $ratings;
+    }
 
-            $playerRatings[$playerId]['rating'] = round($finalRating * 10);
-            $ratings[$playerId] = $playerRatings[$playerId];
+    private function selectPlayerByWeights(Collection $players, array $weights)
+    {
+        if (empty($weights)) {
+            return $players->random();
         }
+
+        $totalWeight = array_sum($weights);
+        if ($totalWeight <= 0) {
+            return $players->random();
+        }
+
+        $rand = mt_rand(1, $totalWeight);
+        $running = 0;
+
+        foreach ($weights as $playerId => $weight) {
+            $running += $weight;
+            if ($rand <= $running) {
+                $player = $players->firstWhere('id', $playerId);
+                return $player ?: $players->random();
+            }
+        }
+
+        return $players->random();
     }
 
     public function recordPlayerPerformances(MatchModel $match, Team $homeTeam, Team $awayTeam, array $events): void
     {
-        $playerRatings = $events['player_ratings'];
-
-        foreach ($playerRatings as $playerId => $data) {
-            $playerPerformance = new PlayerPerformance([
+        foreach ($events['player_ratings'] as $playerId => $data) {
+            PlayerPerformance::create([
                 'player_id' => $playerId,
                 'match_id' => $match->getKey(),
                 'goals_scored' => $data['goals'] ?? 0,
@@ -567,12 +493,10 @@ class MatchSimulator
                 'rating' => $data['rating'] ?? 60,
                 'minutes_played' => 90,
             ]);
-
-            $playerPerformance->save();
         }
     }
 
-    private function updateStandings(MatchModel $match): void
+    public function updateStandings(MatchModel $match): void
     {
         $homeTeam = Team::findOrFail($match->home_team_id);
         $awayTeam = Team::findOrFail($match->away_team_id);
@@ -623,116 +547,38 @@ class MatchSimulator
 
     private function updatePlayerConditions(Team $homeTeam, Team $awayTeam): void
     {
-        $homePlayers = Player::where('team_id', $homeTeam->getKey())->get();
-        $awayPlayers = Player::where('team_id', $awayTeam->getKey())->get();
-
-        foreach ($homePlayers as $player) {
-            if ($player->is_injured) continue;
-
-            $stats = $player->statistics;
-            $staminaFactor = $stats ? (100 - $stats->stamina) / 100 : 0.5;
-
-            $conditionDrop = 5 + (int)(10 * $staminaFactor);
-            $player->condition = max(10, $player->condition - $conditionDrop);
-
-            $injuryChance = 5 + (int)((100 - $player->condition) / 10);
-            if (rand(1, 100) <= $injuryChance) {
-                $player->is_injured = true;
-            }
-
-            $player->save();
-        }
-
-        foreach ($awayPlayers as $player) {
-            if ($player->is_injured) continue;
-
-            $stats = $player->statistics;
-            $staminaFactor = $stats ? (100 - $stats->stamina) / 100 : 0.5;
-
-            $conditionDrop = 5 + (int)(10 * $staminaFactor);
-            $player->condition = max(10, $player->condition - $conditionDrop);
-
-            $injuryChance = 5 + (int)((100 - $player->condition) / 10);
-            if (rand(1, 100) <= $injuryChance) {
-                $player->is_injured = true;
-            }
-
-            $player->save();
-        }
+        $this->updateTeamPlayerConditions($homeTeam);
+        $this->updateTeamPlayerConditions($awayTeam);
     }
 
-    private function getOffensivePlayers(Team $team)
+    private function updateTeamPlayerConditions(Team $team): void
     {
-        return $team->players
-            ->where('is_injured', false)
-            ->whereIn('position', ['STRIKER', 'WINGER', 'MIDFIELDER']);
-    }
-
-    private function selectPlayerByWeightedStats(Collection $players, array $statWeights, array $excludeIds = [])
-    {
-        if ($players->isEmpty()) {
-            return null;
-        }
-
-        $players = $players->whereNotIn('id', $excludeIds);
-        if ($players->isEmpty()) {
-            return null;
-        }
-
-        $playerRatings = [];
+        $players = Player::where('team_id', $team->getKey())->get();
 
         foreach ($players as $player) {
-            $stats = $player->statistics;
-            if (!$stats) continue;
+            if ($player->is_injured) continue;
 
-            $weightedRating = 0;
-            $totalWeight = 0;
+            $baseConditionDrop = 10;
 
-            foreach ($statWeights as $stat) {
-                $weight = 1.0;
-                $weightedRating += ($stats->$stat ?? 50) * $weight;
-                $totalWeight += $weight;
+            if ($player->position === 'STRIKER' || $player->position === 'WINGER') {
+                $baseConditionDrop += 5;
+            } else if ($player->position === 'MIDFIELDER') {
+                $baseConditionDrop += 8;
+            } else if ($player->position === 'FULLBACK' || $player->position === 'CENTRE_BACK') {
+                $baseConditionDrop += 7;
+            } else if ($player->position === 'GOALKEEPER') {
+                $baseConditionDrop += 3;
             }
 
-            if ($totalWeight > 0) {
-                $weightedRating /= $totalWeight;
+            $player->condition = max(10, $player->condition - $baseConditionDrop);
+
+            $injuryChance = 5 + max(0, (80 - $player->condition) / 4);
+            if (mt_rand(1, 100) <= $injuryChance) {
+                $player->is_injured = true;
             }
 
-            $conditionFactor = $player->condition / 100;
-            $weightedRating *= $conditionFactor;
-
-            $playerRatings[$player->getKey()] = $weightedRating;
+            $player->save();
         }
-
-        return $this->selectPlayerByWeights($players, $playerRatings);
-    }
-
-    private function selectPlayerByWeights(Collection $players, array $weights)
-    {
-        $totalWeight = array_sum($weights);
-        if ($totalWeight <= 0) {
-            return $players->random();
-        }
-
-        $randValue = mt_rand(0, (int)($totalWeight * 100)) / 100;
-        $cumulativeWeight = 0;
-
-        foreach ($weights as $playerId => $weight) {
-            $cumulativeWeight += $weight;
-            if ($cumulativeWeight >= $randValue) {
-                return $players->firstWhere('id', $playerId);
-            }
-        }
-
-        return $players->first();
-    }
-
-    private function getRandomNormal(float $mean, float $standardDeviation): float
-    {
-        $x = mt_rand() / mt_getrandmax();
-        $y = mt_rand() / mt_getrandmax();
-
-        return sqrt(-2 * log($x)) * cos(2 * M_PI * $y) * $standardDeviation + $mean;
     }
 
     public function queueMatch(MatchModel $match): bool

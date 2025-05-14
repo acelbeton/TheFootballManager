@@ -1,4 +1,4 @@
-<div> <!-- Single root element wrapper -->
+<div>
     <div class="container p-5">
         <div class="d-flex justify-content-evenly align-content-between">
             @foreach($teams as $team)
@@ -17,6 +17,5 @@
         @endif
     </div>
 
-    <!-- Modal placed here (still within single root) -->
     <livewire:delete-confirmation-modal />
 </div>

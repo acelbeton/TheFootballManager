@@ -1,8 +1,4 @@
-{{--@php--}}
-
-{{--@endphp--}}
-
-<div class="team-card">
+<div class="team-card m-3">
     <h3 class="p-2 d-flex justify-content-center">{{ $team->name }}</h3>
     <div class="stats-grid">
         <div class="stat-item">
@@ -34,7 +30,6 @@
         </div>
     </div>
     <div class="team-card-footer">
-        <!-- Select Button -->
         <button
             wire:click="changeCurrentTeam({{ $team->getKey() }})"
             class="button button-primary px-4 py-2 mr-2"
@@ -42,7 +37,6 @@
             Select
         </button>
 
-        <!-- Delete Button -->
         <button
             class="button button-warning"
             wire:click="$dispatch('openDeleteConfirmation', {

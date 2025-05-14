@@ -30,16 +30,14 @@ class Dashboard extends Component
         })
         ->where('match_date', '>', now())
         ->orderBy('match_date')
-        ->take(3)
         ->get();
 
         $season = Season::where('id', $this->team->season_id)->first();
         if ($season) {
             $this->leagueStandings = Standing::where('season_id', $season->getKey())
                 ->with('team')
-                ->orderBy('points', 'desc')
+                ->orderBy('points_per_week_avg', 'desc')
                 ->orderBy('goals_scored', 'desc')
-                ->take(5)
                 ->get();
 
             $this->leagueInfo = [

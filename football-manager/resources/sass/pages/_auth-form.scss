@@ -2,7 +2,7 @@
 
 .auth-card {
     background-color: vars.$color-background;
-    border: none;
+    border: 1px solid vars.$color-border;
     border-radius: vars.$border-radius-lg;
     padding: 2.5rem;
     box-shadow: vars.$shadow-lg;
@@ -10,12 +10,7 @@
 
     &:hover {
         transform: translateY(-5px);
-        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
-    }
-
-    &:focus-within {
-        outline: none;
-        box-shadow: 0 0 0 3px rgba(vars.$color-information, 0.3), vars.$shadow-lg;
+        box-shadow: vars.$shadow-lg;
     }
 
     .auth-card-title {

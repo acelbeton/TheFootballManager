@@ -19,13 +19,7 @@
                             <a class="nav-link" href="{{ route('dashboard') }}" wire:navigate>Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ route('team-training') }}" wire:navigate>Training</a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link" href="{{ route('change-team') }}" wire:navigate>Change Team</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('market') }}" wire:navigate>Market</a>
                         </li>
                         <li class="nav-item">
                             @livewire('auth.logout')

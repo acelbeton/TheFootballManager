@@ -1,18 +1,55 @@
 @use '../abstract/variables' as vars;
 
+.section-card {
+    background-color: vars.$color-background;
+    border-radius: vars.$border-radius-md;
+    box-shadow: vars.$shadow-sm;
+    margin-bottom: vars.$spacing-lg;
+    overflow: hidden;
+    border: 1px solid vars.$color-border;
+
+    .section-header {
+        background-color: vars.$color-section-background;
+        padding: vars.$spacing-md vars.$spacing-lg;
+        border-bottom: 1px solid vars.$color-border;
+
+        h2 {
+            font-size: vars.$font-size-card-title;
+            font-weight: vars.$font-weight-semi-bold;
+            margin: 0;
+            color: vars.$color-text;
+        }
+    }
+
+    .section-body {
+        padding: vars.$spacing-lg;
+    }
+
+    .section-footer {
+        padding: vars.$spacing-md vars.$spacing-lg;
+        border-top: 1px solid vars.$color-section-background;
+        text-align: center;
+    }
+}
+
 .dashboard-container {
     margin-bottom: vars.$spacing-xl;
 }
 
 .dashboard-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     margin-bottom: vars.$spacing-lg;
 
-    h1 {
-        margin: 0;
-        font-weight: vars.$font-weight-semi-bold;
+    .header-content {
+        padding: vars.$spacing-lg;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        h1 {
+            margin: 0;
+            font-weight: vars.$font-weight-semi-bold;
+            color: vars.$color-primary;
+        }
     }
 
     .team-meta {
@@ -20,9 +57,10 @@
         gap: vars.$spacing-md;
 
         .team-budget, .team-rating, .team-tactic {
-            background-color: vars.$color-background;
+            background-color: vars.$color-section-background;
             padding: vars.$spacing-sm vars.$spacing-md;
             border-radius: vars.$border-radius-md;
+            border: 1px solid vars.$color-border;
 
             .label {
                 font-size: vars.$font-size-sm;
@@ -42,23 +80,23 @@
 }
 
 .dashboard-stats-summary {
-    background-color: vars.$color-background;
-    border-radius: vars.$border-radius-md;
-    margin-bottom: vars.$spacing-lg;
-    padding: vars.$spacing-md;
-    display: flex;
-    align-items: center;
-    box-shadow: vars.$shadow-sm;
+    .stats-content {
+        padding: vars.$spacing-lg;
+        display: flex;
+        align-items: center;
+    }
 
     .position-badge {
         width: 60px;
         height: 60px;
         border-radius: 50%;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
         justify-content: center;
         margin-right: vars.$spacing-md;
+        border: 2px solid white;
+        box-shadow: vars.$shadow-sm;
 
         .position-number {
             font-size: 1.5rem;
@@ -119,6 +157,7 @@
             flex-direction: column;
             align-items: center;
             min-width: 80px;
+            border: 1px solid vars.$color-border;
 
             .label {
                 font-size: vars.$font-size-stat;
@@ -132,6 +171,7 @@
 
             &.stat-pill-highlight {
                 background-color: vars.$color-primary;
+                border-color: vars.$color-primary;
 
                 .label, .value {
                     color: white;
@@ -142,7 +182,7 @@
 }
 
 .action-cards {
-    margin-bottom: vars.$spacing-lg;
+    padding: vars.$spacing-lg;
 
     .card-link {
         text-decoration: none;
@@ -153,10 +193,12 @@
     .action-card {
         height: 100%;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border: 1px solid vars.$color-border;
 
-        &.hover {
+        &:hover {
             transform: translateY(-5px);
             box-shadow: vars.$shadow-lg;
+            border-color: vars.$color-primary;
         }
 
         .card-body {
@@ -253,6 +295,7 @@
         padding: vars.$spacing-xs vars.$spacing-xs;
         background-color: vars.$color-section-background;
         font-weight: vars.$font-weight-semi-bold;
+        border-bottom: 2px solid vars.$color-border;
 
         &:first-child {
             text-align: center;
@@ -278,6 +321,12 @@
         font-weight: vars.$font-weight-semi-bold;
     }
 
+    .ppw-cell {
+        font-weight: vars.$font-weight-semi-bold;
+        color: vars.$color-primary;
+        background-color: rgba(vars.$color-primary, 0.05);
+    }
+
     .your-team-row {
         background-color: rgba(vars.$color-primary, 0.1);
         font-weight: vars.$font-weight-semi-bold;
@@ -286,6 +335,8 @@
 
 .league-info {
     margin-bottom: vars.$spacing-sm;
+    padding-bottom: vars.$spacing-sm;
+    border-bottom: 1px solid vars.$color-section-background;
 
     .league-name {
         font-weight: vars.$font-weight-semi-bold;
@@ -302,6 +353,8 @@
     h4 {
         font-size: vars.$font-size-label;
         margin-bottom: vars.$spacing-sm;
+        padding-bottom: vars.$spacing-xs;
+        border-bottom: 1px solid vars.$color-section-background;
     }
 
     .position-bars {
@@ -319,7 +372,6 @@
                 flex-grow: 1;
                 background-color: vars.$color-section-background;
                 height: 24px;
-                border-radius: vars.$border-radius-sm;
                 overflow: hidden;
             }
 
@@ -365,8 +417,6 @@
         display: flex;
         justify-content: space-between;
         padding: vars.$spacing-sm;
-        background-color: vars.$color-section-background;
-        border-radius: vars.$border-radius-sm;
 
         .label {
             font-weight: vars.$font-weight-normal;
@@ -398,29 +448,62 @@
     padding: vars.$spacing-lg;
     color: vars.$color-text;
     font-style: italic;
+    background-color: rgba(vars.$color-section-background, 0.5);
+    border-radius: vars.$border-radius-sm;
+}
+
+.tooltip-help {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-color: vars.$color-information;
+    color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 16px;
+    font-size: 10px;
+    margin-left: 4px;
+    cursor: help;
 }
 
 @media (max-width: 768px) {
     .dashboard-header {
-        flex-direction: column;
-        align-items: flex-start;
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+        }
 
         .team-meta {
             margin-top: vars.$spacing-sm;
             flex-wrap: wrap;
+            width: 100%;
         }
     }
 
     .dashboard-stats-summary {
-        flex-direction: column;
+        .stats-content {
+            flex-direction: column;
+        }
 
         .position-badge {
             margin-right: 0;
             margin-bottom: vars.$spacing-sm;
         }
+
+        .stats-pills {
+            justify-content: center;
+        }
     }
 
     .squad-summary, .position-distribution {
         margin-bottom: vars.$spacing-md;
+    }
+
+    .standings-table {
+        font-size: vars.$font-size-stat;
+
+        th, td {
+            padding: vars.$spacing-xs vars.$spacing-xs / 2;
+        }
     }
 }

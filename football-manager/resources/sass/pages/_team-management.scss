@@ -4,30 +4,6 @@
     margin-bottom: vars.$spacing-md;
 }
 
-.team-management-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: vars.$spacing-md;
-
-    h1 {
-        margin: 0;
-        font-weight: vars.$font-weight-semi-bold;
-    }
-
-    .team-info {
-        h3 {
-            margin: 0;
-            font-size: vars.$font-size-md;
-        }
-
-        .team-description {
-            color: vars.$color-text;
-            font-size: vars.$font-size-sm;
-        }
-    }
-}
-
 .tactics-selection {
     background-color: vars.$color-background;
     padding: vars.$spacing-sm;
@@ -80,7 +56,7 @@
     position: relative;
     width: 100%;
     padding-top: 60%;
-    background-color: #4CAF50; // Zöld fűszín a háttérre
+    background-color: #4CAF50;
     border-radius: vars.$border-radius-md;
     overflow: hidden;
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
@@ -528,15 +504,6 @@
 }
 
 @media (max-width: 768px) {
-    .team-management-header {
-        flex-direction: column;
-        align-items: flex-start;
-
-        .match-info {
-            margin-top: vars.$spacing-sm;
-        }
-    }
-
     .squad-selection {
         margin-top: vars.$spacing-lg;
     }

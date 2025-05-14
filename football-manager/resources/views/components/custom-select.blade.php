@@ -1,22 +1,37 @@
 @props([
     'label' => 'Select an option',
     'name',
-    'options' => []  // asszociatív tömböt vár [value => display text]
+    'options' => [],  // asszociatív tömböt vár [value => display text]
+    'default' => null
 ])
 
-<div class="select-group mb-3" x-data="{ open: false, selectedText: '{{ $label }}' }" wire:ignore>
+<div class="select-group mb-3" x-data="{
+        open: false,
+        selectedText: '{{ $label }}',
+        updateText() {
+            const select = this.$refs.select;
+            if (select.selectedIndex >= 0) {
+                this.selectedText = select.options[select.selectedIndex].text;
+            }
+        },
+        init() {
+            this.$nextTick(() => this.updateText());
+        }
+    }"
+wire:ignore.self
+>
     <select
         id="{{ $name }}"
         name="{{ $name }}"
         class="hidden"
         x-ref="select"
-        x-on:change="selectedText = $refs.select.options[$refs.select.selectedIndex].text"
-        {{ $attributes->whereStartsWith('wire:model') }}
+        x-on:change="updateText()"
+        {{ $attributes }}
         required
     >
-        <option value="" selected disabled>{{ $label }}</option>
+        <option value="" disabled>{{ $label }}</option>
         @foreach ($options as $value => $text)
-            <option value="{{ $value }}">{{ $text }}</option>
+            <option value="{{ $value }}" {{ $value == $default ? 'selected' : '' }}>{{ $text }}</option>
         @endforeach
     </select>
 
@@ -31,7 +46,6 @@
                 class="custom-option"
                 x-on:click="
                 $refs.select.value = '{{ $value }}';
-                selectedText = @js($text);
                 $refs.select.dispatchEvent(new Event('change'));
                 open = false"
             >

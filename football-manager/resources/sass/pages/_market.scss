@@ -4,39 +4,11 @@
     margin-bottom: vars.$spacing-xl
 }
 
-.market-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: vars.$spacing-lg;
-
-    .market-title {
-        margin: 0;
-        font-weight: vars.$font-weight-semi-bold;
-    }
-
-    .market-balance {
-        background-color: vars.$color-background;
-        padding: vars.$spacing-sm vars.$spacing-md;
-        border-radius: vars.$spacing-md;
-        margin-bottom: vars.$spacing-lg;
-
-        .budget-amount {
-            font-weight: vars.$color-primary;
-            color: vars.$color-text;
-        }
-    }
-}
-
 .market-filters {
     background-color: vars.$color-background;
     padding: vars.$spacing-md;
     border-radius: vars.$spacing-sm;
     margin-bottom: vars.$spacing-lg;
-
-    //input {
-    //    width: 100%;
-    //}
 
     .range-label {
         position: absolute;

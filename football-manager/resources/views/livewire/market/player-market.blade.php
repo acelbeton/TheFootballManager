@@ -3,10 +3,15 @@
 @endphp
 
 <div class="market-container">
-    <div class="market-header">
-        <h2 class="market-title">Player Market</h2>
-        <div class="market-balance">
-            <strong>Team Budget:</strong> <span class="budget-amount">{{ number_format($teamBudget) }} €</span>
+    <div class="dashboard-header section-card">
+        <div class="header-content">
+            <h1>Player Market</h1>
+            <div class="team-meta">
+                <div class="team-budget">
+                    <span class="label">Budget:</span>
+                    <span class="value">{{ number_format($teamBudget) }} €</span>
+                </div>
+            </div>
         </div>
     </div>
 

@@ -19,36 +19,47 @@ class TrainingService
         $team = Auth::user()->currentTeam;
         $players = $team->players->load('statistics');
 
-        self::getEach($players, 'individual');
+        $trainingResults = self::getEach($players, 'individual');
 
-        TrainingSession::create([
+        $session = TrainingSession::create([
             'type' => TrainingType::TEAM,
             'user_id' => Auth::id(),
             'team_id' => $team->getKey(),
+            'results' => $trainingResults,
         ]);
+
+        return $trainingResults;
     }
 
     public static function trainPlayer(array $selectedPlayers)
     {
         $players = Player::whereIn('id', $selectedPlayers)->get();
 
-        self::getEach($players, 'player');
+        $trainingResults = self::getEach($players, 'player');
 
-        TrainingSession::create([
+        $session = TrainingSession::create([
             'type' => TrainingType::INDIVIDUAL,
             'user_id' => Auth::id(),
             'team_id' => Auth::user()->currentTeam->getKey(),
             'participants' => $players->pluck('id')->toArray(),
+            'results' => $trainingResults,
         ]);
+
+        return $trainingResults;
     }
 
-    /**
-     * @param $players
-     * @return void
-     */
-    protected static function getEach($players, $trainingMode): void
+
+    protected static function getEach($players, $trainingMode): array
     {
-        $players->each(function ($player) use ($trainingMode) {
+        $results = [];
+
+        $players->each(function ($player) use ($trainingMode, &$results) {
+            $playerId = $player->getKey();
+            $results[$playerId] = [
+                'stats' => [],
+                'condition' => 0
+            ];
+
             $selectableStatistics = [
                 'attacking',
                 'defending',
@@ -67,6 +78,7 @@ class TrainingService
                 foreach ($randomKeys as $key) {
                     $increase = rand($min, $max);
                     $player->statistics->$key += $increase;
+                    $results[$playerId]['stats'][$key] = $increase;
                 }
                 $player->statistics->save();
             }
@@ -76,8 +88,12 @@ class TrainingService
                 $chance = rand(1, 100);
                 $increase = $chance <= 75 ? rand(2, 5) : rand(5, 8); // kisebb az esély a nagyobb számra
                 $player->condition -= $increase;
+                $results[$playerId]['condition'] = -$increase;
+
                 $player->save();
             }
         });
+
+        return $results;
     }
 }
