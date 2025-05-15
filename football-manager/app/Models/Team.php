@@ -32,6 +32,12 @@ class Team extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function updateRating(): void
+    {
+        $avgRating = (int) $this->players()->avg('rating') ?: 0;
+        $this->update(['team_rating' => (int)round($avgRating)]);
+    }
+
     public function currentTeamRelation(): HasOne
     {
         return $this->hasOne(User::class, 'current_team_id', 'id');

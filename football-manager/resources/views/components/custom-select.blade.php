@@ -29,7 +29,7 @@ wire:ignore.self
         {{ $attributes }}
         required
     >
-        <option value="" disabled>{{ $label }}</option>
+        <option value="" @if($default !== null) disabled @endif>{{ $label }}</option>
         @foreach ($options as $value => $text)
             <option value="{{ $value }}" {{ $value == $default ? 'selected' : '' }}>{{ $text }}</option>
         @endforeach

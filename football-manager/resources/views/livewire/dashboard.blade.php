@@ -265,7 +265,7 @@
                                 </div>
                             </div>
                             <div class="section-footer text-center">
-                                <a href="#" class="button button-primary">Manage Squad</a>
+                                <a wire:navigate href="{{ route('team-management') }}" class="button button-primary">Manage Squad</a>
                             </div>
                         </div>
                     </div>

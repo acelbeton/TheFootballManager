@@ -6,7 +6,9 @@ use App\Helpers\StatsHelper;
 use App\Http\Enums\PlayerPosition;
 use App\Models\Player;
 use App\Models\Season;
+use App\Models\Standing;
 use App\Models\Team;
+use Exception;
 use Illuminate\Support\Facades\DB;
 
 class AITeamGeneratorService
@@ -44,7 +46,7 @@ class AITeamGeneratorService
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     private function createAITeam(Season $season): Team
     {
@@ -61,6 +63,11 @@ class AITeamGeneratorService
             'team_rating' => $baseTeamRating,
             'team_budget' => rand(8000, 15000),
             'current_tactic' => $this->getRandomTactic()
+        ]);
+
+        Standing::create([
+            'season_id' => $season->getKey(),
+            'team_id' => $team->getKey(),
         ]);
 
         $this->assignPlayersToTeam($team, $baseTeamRating);
@@ -128,13 +135,6 @@ class AITeamGeneratorService
         $team->update([
             'team_rating' => (int) $team->players()->avg('rating')
         ]);
-    }
-
-    private function calculateMarketValue(int $playerRating): int
-    {
-        $baseValue = 1000;
-        $multiplier = pow(1.1, $playerRating - 50);
-        return (int) ($baseValue * $multiplier);
     }
 
     private function generatePlayerName(): string

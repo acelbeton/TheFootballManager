@@ -161,7 +161,6 @@
                         </div>
 
                         <div class="players-list">
-                            <!-- Bench Players -->
                             @foreach($players as $player)
                                 @if(in_array($player->getKey(), $benchPlayers))
                                     <div class="player-card-container"
@@ -194,7 +193,6 @@
                                 @endif
                             @endforeach
 
-                            <!-- Players in Lineup -->
                             @foreach($players as $player)
                                 @if(!in_array($player->getKey(), $benchPlayers))
                                     <div class="player-card-container"

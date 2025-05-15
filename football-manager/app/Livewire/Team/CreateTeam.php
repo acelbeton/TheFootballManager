@@ -39,7 +39,6 @@ class CreateTeam extends Component
     public function createTeam()
     {
         $this->validate();
-
         $league = $this->leagues->find($this->selectedLeagueId);
 
         $season = Season::where('league_id', $league->getKey())
@@ -66,17 +65,12 @@ class CreateTeam extends Component
         ]);
 
         Auth::user()->update(['current_team_id' => $team->getKey()]);
-
         $this->assignRandomPlayers($team);
-
         $this->lineupService->createDefaultLineup($team);
-
         $this->leagueManager->setupLeague($league);
-
         $standing = Standing::where('team_id', $team->getKey())->first();
 
-        if (!$standing)
-        {
+        if (!$standing) {
             Standing::create([
                'season_id' => $season->getKey(),
                'team_id' => $team->getKey(),
@@ -111,7 +105,7 @@ class CreateTeam extends Component
                     'name' => $this->generatePlayerName(),
                     'rating' => $rating,
                     'market_value' => $marketValue,
-                    'team_id' => $team->id,
+                    'team_id' => $team->getKey(),
                     'position' => $position,
                     'condition' => rand(80, 100),
                     'is_injured' => false,
@@ -121,8 +115,6 @@ class CreateTeam extends Component
                 $player->statistics()->create($stats);
             }
         }
-
-        $this->updateTeamRating($team);
     }
 
     private function determineTeamQualityTier(Team $team): int
@@ -171,13 +163,6 @@ class CreateTeam extends Component
         return "$firstName $lastName";
     }
 
-    private function updateTeamRating(Team $team)
-    {
-        $team->update([
-            'team_rating' => (int) $team->players()->avg('rating')
-        ]);
-    }
-
     public function mount()
     {
         $this->leagues = League::all();
@@ -185,7 +170,7 @@ class CreateTeam extends Component
 
     public function render()
     {
-        if (Auth::user()->teams()->count() > 3) {
+        if (Auth::user()->teams()->count() === 3) {
             return redirect()->route('dashboard');
         }
 

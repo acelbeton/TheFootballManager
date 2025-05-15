@@ -14,8 +14,6 @@ class LeagueSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('leagues')->truncate();
-
         $adminId = 1;
 
         $leagues = [
@@ -37,8 +35,6 @@ class LeagueSeeder extends Seeder
             League::create([
                 'name' => $leagueName,
                 'created_by' => $adminId,
-                'created_at' => now(),
-                'updated_at' => now()
             ]);
         }
     }

@@ -15,26 +15,6 @@ use Throwable;
 
 class MatchSimulator
 {
-    public function simulatePendingMatches(?Carbon $beforeDate = null): array
-    {
-        $beforeDate = $beforeDate ?: now();
-
-        $pendingMatches = MatchModel::where('match_date', '<', $beforeDate)
-            ->where(function($query) {
-                $query->where('home_team_score', 0)
-                    ->where('away_team_score', 0);
-            })
-            ->get();
-
-        $simulatedMatches = [];
-
-        foreach ($pendingMatches as $match) {
-            $simulatedMatches[] = $this->simulateMatch($match);
-        }
-
-        return $simulatedMatches;
-    }
-
     /**
      * @throws Throwable
      */
@@ -545,7 +525,7 @@ class MatchSimulator
         $awayStanding->save();
     }
 
-    private function updatePlayerConditions(Team $homeTeam, Team $awayTeam): void
+    public function updatePlayerConditions(Team $homeTeam, Team $awayTeam): void
     {
         $this->updateTeamPlayerConditions($homeTeam);
         $this->updateTeamPlayerConditions($awayTeam);

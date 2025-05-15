@@ -17,7 +17,7 @@ Schedule::command(ProcessLeagues::class)->hourly();
 
 Schedule::command(ProcessLeagueWeek::class)->daily();
 
-Schedule::command('market:manage')->dailyAt('03:00');
+Schedule::command('market:manage')->dailyAt('15:00');
 
 Schedule::command('market:manage --generate-count=5')->weekends()->at('12:00');
 

@@ -99,7 +99,6 @@ class StatsHelper
     public static function calculateOverallRating(array $stats, PlayerPosition $position): int
     {
         $weights = self::getStatWeightsByPosition($position);
-
         $weightedSum = 0;
         $totalWeight = 0;
 
