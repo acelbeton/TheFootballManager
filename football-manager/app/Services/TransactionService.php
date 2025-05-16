@@ -9,6 +9,7 @@ use App\Models\Team;
 use DB;
 use Exception;
 use Illuminate\Support\Carbon;
+use Throwable;
 
 class TransactionService
 {
@@ -62,7 +63,7 @@ class TransactionService
     }
 
     /**
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function finalizeTransfer(int $marketId, int $teamId)
     {

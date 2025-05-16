@@ -2,14 +2,15 @@
     use App\Http\Enums\PlayerPosition;
 @endphp
 
-<div class="modal fade show" style="display: block;" tabindex="-1" aria-modal="true" role="dialog">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Place Bid for {{ $selectedPlayer->name }}</h5>
-                <button type="button" class="btn-close" wire:click="cancelBid" aria-label="Close"></button>
+@if($showBidModal && $selectedPlayer)
+    <div class="custom-modal-overlay">
+        <div class="custom-modal">
+            <div class="custom-modal__header">
+                <h5 class="custom-modal__title">Place Bid for {{ $selectedPlayer->name }}</h5>
+                <button type="button" class="btn-close" wire:click="cancelBid"></button>
             </div>
-            <div class="modal-body">
+
+            <div class="custom-modal__body">
                 <div class="player-info mb-4">
                     <div class="d-flex align-items-center">
                         <div class="player-avatar">
@@ -46,11 +47,11 @@
                     @error('bidAmount') <span class="text-danger mt-1">{{ $message }}</span> @enderror
                 </div>
             </div>
-            <div class="modal-footer">
+
+            <div class="custom-modal__footer">
                 <button type="button" class="btn btn-secondary" wire:click="cancelBid">Cancel</button>
                 <button type="button" class="btn btn-primary" wire:click="placeBid">Place Bid</button>
             </div>
         </div>
     </div>
-</div>
-<div class="modal-backdrop fade show"></div>
+@endif

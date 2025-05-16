@@ -43,10 +43,4 @@
             </div>
         </div>
     </section>
-
-    <section class="screenshots">
-        <div class="d-flex justify-content-center flex-wrap gap-1 mt-2">
-            {{-- Ide fog menni majd a gameplay, ez még WIP --}}
-        </div>
-    </section>
 </div>

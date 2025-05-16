@@ -33,16 +33,6 @@ class MatchViewer extends Component
     public $isMatchLive = false;
     public $canStartMatch = false;
     public $isLoading = false;
-    public $viewerCount = 0;
-
-    protected $listeners = [
-        'echo-presence:match.{matchId},here' => 'handleViewersPresent',
-        'echo-presence:match.{matchId},joining' => 'handleNewViewer',
-        'echo-presence:match.{matchId},leaving' => 'handleViewerLeaving',
-        'echo-presence:match.{matchId},MatchStatusUpdate' => 'handleMatchUpdate',
-        'refreshMatchData' => 'handleMatchUpdate',
-        'getMatchEvents' => 'getMatchEvents'
-    ];
 
     public function getMatchEvents(): void
     {
@@ -115,6 +105,23 @@ class MatchViewer extends Component
                     'home_score' => $isHomeTeam ? $homeGoals : $homeGoals,
                     'away_score' => $isHomeTeam ? $awayGoals : $awayGoals,
                 ];
+
+                $numShots = rand(1, 3);
+                for ($j = 0; $j < $numShots; $j++) {
+                    $shotMinute = $this->generateRandomMinute($j, $numShots);
+                    if ($shotMinute == $minute) continue;
+
+                    $events[] = [
+                        'type' => 'SHOT',
+                        'minute' => $shotMinute,
+                        'team' => $team,
+                        'main_player_id' => $player->getKey(),
+                        'main_player_name' => $player->name,
+                        'commentary' => "{$player->name} takes a shot.",
+                        'home_score' => $isHomeTeam ? $homeGoals : $homeGoals,
+                        'away_score' => $isHomeTeam ? $awayGoals : $awayGoals,
+                    ];
+                }
             }
         }
 
@@ -141,7 +148,7 @@ class MatchViewer extends Component
         return max(1, min(90, $minute));
     }
 
-    private function generateGenericEvents()
+    private function generateGenericEvents(): void
     {
         $events = [];
 
@@ -178,51 +185,19 @@ class MatchViewer extends Component
         $this->matchEvents = $events;
     }
 
-    private function calculateProbableMinuteForGoal($goalNumber, $totalGoals)
+    public function getListeners()
     {
-        if ($totalGoals <= 1) {
-            return mt_rand(1, 100) <= 65 ? mt_rand(46, 90) : mt_rand(1, 45);
+        $listeners = [
+            'refreshMatchData' => 'refreshMatchData',
+            'getMatchEvents' => 'getMatchEvents'
+        ];
+
+        if ($this->match && $this->match->getKey()) {
+            $listeners["echo-presence:match.{$this->match->getKey()},MatchStatusUpdate"] = 'handleMatchUpdate';
         }
 
-        $avgSpacing = 90 / ($totalGoals + 1);
-        $targetMinute = ($goalNumber + 1) * $avgSpacing;
-
-        $variance = mt_rand(-15, 15);
-        return max(1, min(90, (int)($targetMinute + $variance)));
+        return $listeners;
     }
-
-//    private function generateGenericMatchEvents()
-//    {
-//        for ($i = 0; $i < $this->match->home_team_score; $i++) {
-//            $minute = $this->calculateProbableMinuteForGoal($i, $this->match->home_team_score);
-//            $this->matchEvents[] = [
-//                'type' => 'GOAL',
-//                'minute' => $minute,
-//                'team' => 'home',
-//                'main_player_name' => 'Unknown Player',
-//                'commentary' => "GOAL! The home team scores!",
-//                'home_score' => $i + 1,
-//                'away_score' => 0,
-//            ];
-//        }
-//
-//        for ($i = 0; $i < $this->match->away_team_score; $i++) {
-//            $minute = $this->calculateProbableMinuteForGoal($i, $this->match->away_team_score);
-//            $this->matchEvents[] = [
-//                'type' => 'GOAL',
-//                'minute' => $minute,
-//                'team' => 'away',
-//                'main_player_name' => 'Unknown Player',
-//                'commentary' => "GOAL! The away team scores!",
-//                'home_score' => $this->match->home_team_score,
-//                'away_score' => $i + 1,
-//            ];
-//        }
-//
-//        usort($this->matchEvents, function($a, $b) {
-//            return $a['minute'] <=> $b['minute'];
-//        });
-//    }
 
     public function mount($matchId): void
     {
@@ -230,8 +205,20 @@ class MatchViewer extends Component
         $this->homeTeam = Team::findOrFail($this->match->home_team_id);
         $this->awayTeam = Team::findOrFail($this->match->away_team_id);
 
+        $this->getListeners = function() {
+            return [
+                "echo-presence:match.{$this->match->id},MatchStatusUpdate" => 'handleMatchUpdate',
+                'refreshMatchData' => 'refreshMatchData',
+                'getMatchEvents' => 'getMatchEvents'
+            ];
+        };
+
         $userTeamId = Auth::user()->currentTeam->getKey();
         $this->isUserTeam = ($userTeamId == $this->homeTeam->getKey() || $userTeamId == $this->awayTeam->getKey());
+
+        if (!$this->isUserTeam) {
+            $this->redirect('/dashboard');
+        }
 
         $simulationService = app(RealtimeMatchSimulationService::class);
         $status = $simulationService->getMatchStatus($this->match);
@@ -276,7 +263,7 @@ class MatchViewer extends Component
         }
     }
 
-    private function updateStatsFromMatchState($matchState)
+    private function updateStatsFromMatchState($matchState): void
     {
         $stats = [
             'possession' => 'possession',
@@ -300,73 +287,6 @@ class MatchViewer extends Component
             now()->addMinutes(15)->gte($this->match->match_date) &&
             $this->match->home_team_score == 0 &&
             $this->match->away_team_score == 0;
-    }
-
-    public function startMatch()
-    {
-        if (!$this->canStartMatch) {
-            return;
-        }
-
-        $this->isLoading = true;
-
-        try {
-            $simulationService = app(RealtimeMatchSimulationService::class);
-            $result = $simulationService->startMatch($this->match);
-
-            $this->dispatch('notify', [
-                'type' => 'success',
-                'message' => $result['message']
-            ]);
-
-            $this->isMatchLive = true;
-            $this->dispatch('match-started');
-        } catch (Exception $e) {
-            $this->dispatch('notify', [
-                'type' => 'error',
-                'message' => 'Failed to start match: ' . $e->getMessage()
-            ]);
-        }
-
-        $this->isLoading = false;
-    }
-
-    public function handleViewersPresent($data)
-    {
-        $this->viewerCount = count($data);
-
-        if ($this->viewerCount > 1) {
-            $this->dispatch('notify', [
-                'type' => 'info',
-                'message' => "There are {$this->viewerCount} people watching this match"
-            ]);
-        }
-    }
-
-    public function handleNewViewer($data)
-    {
-        $this->viewerCount++;
-
-        $user = $data['user'] ?? ['name' => 'Someone', 'id' => null];
-        if (isset($user['id']) && $user['id'] != Auth::id()) {
-            $this->dispatch('notify', [
-                'type' => 'info',
-                'message' => "{$user['name']} joined the match"
-            ]);
-        }
-    }
-
-    public function handleViewerLeaving($data)
-    {
-        $this->viewerCount = max(0, $this->viewerCount - 1);
-
-        $user = $data['user'] ?? ['name' => 'Someone', 'id' => null];
-        if (isset($user['id']) && $user['id'] != Auth::id()) {
-            $this->dispatch('notify', [
-                'type' => 'info',
-                'message' => "{$user['name']} left the match"
-            ]);
-        }
     }
 
     public function handleMatchUpdate($update): void

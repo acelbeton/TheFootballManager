@@ -164,11 +164,11 @@
     </div>
 
     @if($showBidModal && $selectedPlayer)
-        @include('livewire.market.partials.show-bid-modal')
+        <div>
+            @include('livewire.market.partials.show-bid-modal')
+        </div>
     @endif
 
-    <!-- Notification Toast -->
-    <!-- TODO modularize -->
     <div
         x-data="{
             show: false,

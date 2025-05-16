@@ -53,6 +53,18 @@
                                             @case('GOAL')
                                                 <i class="bi bi-bullseye"></i>
                                                 @break
+                                            @case('SHOT')
+                                                <i class="bi bi-record-circle"></i>
+                                                @break
+                                            @case('CARD')
+                                                <div class="card yellow-card"></div>
+                                                @break
+                                            @case('SAVE')
+                                                <i class="bi bi-hand-thumbs-up"></i>
+                                                @break
+                                            @case('OTHER')
+                                                <i class="bi bi-circle"></i>
+                                                @break
                                             @case('SHOT_ON_TARGET')
                                                 <i class="bi bi-record-circle"></i>
                                                 @break
@@ -67,9 +79,6 @@
                                                 @break
                                             @case('RED_CARD')
                                                 <div class="card red-card"></div>
-                                                @break
-                                            @case('GREAT_SAVE')
-                                                <i class="bi bi-hand-thumbs-up"></i>
                                                 @break
                                             @default
                                                 <i class="bi bi-circle"></i>
@@ -213,11 +222,6 @@
             },
 
             setupEventListeners: function() {
-                // const startButton = document.querySelector('button[wire\\:click="startMatch"]');
-                // if (startButton) {
-                //     startButton.addEventListener('click', () => this.handleMatchStart());
-                // }
-
                 document.addEventListener('livewire:init', () => {
                     Livewire.on('match_updated', (eventData) => {
                         if (eventData && eventData.events && eventData.events.length > 0) {
@@ -291,22 +295,7 @@
                         this.displayEvent(event, false);
                         this.displayedEvents.push(event);
                     });
-                } else if (!this.isLive) {
-                    this.displayWaitingMessage(feed);
                 }
-            },
-
-            displayWaitingMessage: function(feed) {
-                const item = document.createElement('div');
-                item.className = 'commentary-item GENERIC neutral-team';
-                item.innerHTML = `
-                <div class="event-minute">0'</div>
-                <div class="event-icon"><i class="bi bi-circle"></i></div>
-                <div class="event-content">
-                    <div class="event-text">Match will begin soon. Stay tuned for live commentary!</div>
-                </div>
-            `;
-                feed.appendChild(item);
             },
 
             renderCommentary: function() {
@@ -314,12 +303,6 @@
                 if (!feed) return;
 
                 feed.innerHTML = '';
-
-                if (this.events.length === 0) {
-                    this.displayWaitingMessage(feed);
-                    return;
-                }
-
                 const sortedEvents = [...this.events].sort((a, b) => a.minute - b.minute);
 
                 let eventsToDisplay;
@@ -711,14 +694,10 @@
             getEventIcon: function(type) {
                 switch(type) {
                     case 'GOAL': return '<i class="bi bi-bullseye"></i>';
-                    case 'SHOT_ON_TARGET': return '<i class="bi bi-record-circle"></i>';
-                    case 'SHOT_OFF_TARGET': return '<i class="bi bi-record-circle-fill"></i>';
-                    case 'CORNER': return '<i class="bi bi-flag-fill"></i>';
-                    case 'YELLOW_CARD': return '<div class="card yellow-card"></div>';
-                    case 'RED_CARD': return '<div class="card red-card"></div>';
-                    case 'GREAT_SAVE':
+                    case 'SHOT': return '<i class="bi bi-record-circle"></i>';
+                    case 'CARD': return '<div class="card yellow-card"></div>';
                     case 'SAVE': return '<i class="bi bi-hand-thumbs-up"></i>';
-                    case 'TACKLE': return '<i class="bi bi-shield"></i>';
+                    case 'OTHER': return '<i class="bi bi-circle"></i>';
                     default: return '<i class="bi bi-circle"></i>';
                 }
             },

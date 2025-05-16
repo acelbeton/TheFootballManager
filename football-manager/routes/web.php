@@ -6,11 +6,9 @@ use App\Livewire\Dashboard;
 use App\Livewire\LoginForm;
 use App\Livewire\MatchViewer;
 use App\Livewire\PlayerMarket;
-use App\Livewire\Players;
 use App\Livewire\RegistrationForm;
 use App\Livewire\Team\CreateTeam;
 use App\Livewire\TeamManagement;
-use App\Livewire\Teams;
 use App\Livewire\TeamSelection;
 use App\Livewire\TrainingDashboard;
 use App\Livewire\Welcome;
@@ -25,9 +23,6 @@ Broadcast::routes(['middleware' => ['auth']]);
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', Dashboard::class)->name('dashboard');
-
-    Route::get('/teams', Teams::class)->name('teams.index');
-    Route::get('/players', Players::class)->name('players.index');
 
     Route::get('/create-team', CreateTeam::class)->name('create-team');
 

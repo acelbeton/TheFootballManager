@@ -37,14 +37,16 @@
             Select
         </button>
 
-        <button
-            class="button button-warning"
-            wire:click="$dispatch('openDeleteConfirmation', {
-                teamId: {{ $team->getKey() }},
-                teamName: '{{ addslashes($team->name) }}'
-            })"
-        >
-            Delete
-        </button>
+{{--        @if(!$team->season)--}}
+            <button
+                class="button button-warning"
+                wire:click="$dispatch('openDeleteConfirmation', {
+                    teamId: {{ $team->getKey() }},
+                    teamName: '{{ addslashes($team->name) }}'
+                })"
+            >
+                Delete
+            </button>
+{{--        @endif--}}
     </div>
 </div>

@@ -16,7 +16,7 @@ class RealtimeMatchSimulationService
     /**
      * @throws Exception
      */
-    public function startMatch(MatchModel $match)
+    public function startMatch(MatchModel $match): array
     {
         if ($match->home_team_score > 0 || $match->away_team_score > 0) {
             throw new Exception("This match has already been played.");
@@ -57,7 +57,7 @@ class RealtimeMatchSimulationService
         ];
     }
 
-    public function getMatchState(MatchModel $match)
+    public function getMatchState(MatchModel $match): array
     {
         $match->refresh();
 
@@ -79,7 +79,19 @@ class RealtimeMatchSimulationService
         $awayShotsOnTarget = 0;
 
         foreach ($events as $event) {
-            if ($event->type === 'SHOT_ON_TARGET') {
+            if ($event->type === 'SHOT') {
+                if ($event->team === 'home') {
+                    $homeShots++;
+                    if (rand(1, 100) <= 50) {
+                        $homeShotsOnTarget++;
+                    }
+                } else {
+                    $awayShots++;
+                    if (rand(1, 100) <= 50) {
+                        $awayShotsOnTarget++;
+                    }
+                }
+            } else if ($event->type === 'GOAL') {
                 if ($event->team === 'home') {
                     $homeShots++;
                     $homeShotsOnTarget++;
@@ -87,11 +99,13 @@ class RealtimeMatchSimulationService
                     $awayShots++;
                     $awayShotsOnTarget++;
                 }
-            } else if ($event->type === 'SHOT_OFF_TARGET') {
+            } else if ($event->type === 'SAVE') {
                 if ($event->team === 'home') {
-                    $homeShots++;
-                } else {
                     $awayShots++;
+                    $awayShotsOnTarget++;
+                } else {
+                    $homeShots++;
+                    $homeShotsOnTarget++;
                 }
             }
         }

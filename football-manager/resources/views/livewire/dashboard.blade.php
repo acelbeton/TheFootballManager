@@ -160,6 +160,12 @@
                                                 <div class="team away-team {{ $match->away_team_id == $team->getKey() ? 'your-team' : '' }}">
                                                     {{ $match->awayTeam->name }}
                                                 </div>
+                                                <div>
+                                                    <a style="text-decoration: none;"
+                                                       wire:navigate
+                                                       href="{{ route('match.view', ['matchId' => $match->getKey()]) }}"
+                                                       class="button-small button-primary">Watch</a>
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach

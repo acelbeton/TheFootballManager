@@ -12,6 +12,7 @@ use Exception;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class ManageMarket extends Command
 {
@@ -49,10 +50,7 @@ class ManageMarket extends Command
         return 0;
     }
 
-    /**
-     * Handle expired bids
-     */
-    private function handleExpiredBids()
+    private function handleExpiredBids(): void
     {
         $this->info("Processing expired market bids...");
 
@@ -82,6 +80,8 @@ class ManageMarket extends Command
                     $this->info("Transfer finalized for player ID: {$playerId}");
                 } catch (Exception $e) {
                     $this->error("Failed to finalize transfer for player ID: {$playerId}: {$e->getMessage()}");
+                } catch (Throwable $e) {
+                    $this->error("Throwable: {$playerId}: {$e->getMessage()}");
                 }
             } else {
                 try {
@@ -97,7 +97,7 @@ class ManageMarket extends Command
         $this->info("Finalized {$finalized} transfers and reset bidding for {$reset} players");
     }
 
-    private function resetPlayerBidding(Player $player)
+    private function resetPlayerBidding(Player $player): void
     {
         Market::where('player_id', $player->getKey())->delete();
 
@@ -107,7 +107,7 @@ class ManageMarket extends Command
         }
     }
 
-    private function generateMarketPlayers(int $count)
+    private function generateMarketPlayers(int $count): void
     {
         $currentMarketCount = Player::where('is_on_market', true)->count();
         if ($currentMarketCount >= 15) {
@@ -139,7 +139,7 @@ class ManageMarket extends Command
         }
     }
 
-    private function createMarketPlayer(string $position)
+    private function createMarketPlayer(string $position): Player
     {
         $player = new Player();
         $player->name = $this->generatePlayerName();

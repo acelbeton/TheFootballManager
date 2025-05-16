@@ -109,7 +109,7 @@ class CreateTeam extends Component
                     'position' => $position,
                     'condition' => rand(80, 100),
                     'is_injured' => false,
-                    'is_on_market' => rand(1, 10) > 8,
+                    'is_on_market' => 0,
                 ]);
 
                 $player->statistics()->create($stats);
