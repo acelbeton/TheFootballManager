@@ -57,7 +57,7 @@
     </div>
 
     @if($showWarning)
-        <div class="position-warning" x-data="{ show: true }" x-show="show"
+        <div class="position-warning m-4" x-data="{ show: true }" x-show="show"
              x-init="setTimeout(() => show = false, 5000)">
             <div class="alert alert-warning">
                 <span class="warning-icon"><i class="bi bi-exclamation-triangle"></i></span>
@@ -183,10 +183,6 @@
                                                         @endif
                                                     </div>
                                                 </div>
-                                                <div class="assign-button">
-                                                    <i class="bi bi-plus-circle"></i>
-                                                    <span>Select</span>
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -220,6 +216,11 @@
                                 @endif
                             @endforeach
                         </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <button class="button button-primary" wire:click="saveLineup">
+                            Save Lineup
+                        </button>
                     </div>
                 </div>
             </div>

@@ -43,6 +43,12 @@
     border: 2px solid vars.$color-primary;
 }
 
+.button-highlight {
+    background-color: vars.$color-highlight;
+    color: vars.$color-background;
+    border: 2px solid vars.$color-highlight;
+}
+
 .button-primary:hover {
     background-color: vars.$color-primary-hover;
     transform: scale(1.02);

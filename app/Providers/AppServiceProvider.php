@@ -24,7 +24,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         DB::disableQueryLog();
-        Model::preventLazyLoading(!app()->isProduction());
+//        Model::preventLazyLoading(!app()->isProduction());
 
         Statistic::observe(StatisticObserver::class);
     }

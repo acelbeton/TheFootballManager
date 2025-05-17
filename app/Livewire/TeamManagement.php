@@ -191,24 +191,25 @@ class TeamManagement extends Component
 
         $this->benchPlayers = $this->players->pluck('id')->toArray();
 
-        $this->lineup->update(['formation_id' => $this->selectedFormationId]);
+        if ($this->validateLineup()) {
+            $this->lineup->update(['formation_id' => $this->selectedFormationId]);
+            LineupPlayer::where('lineup_id', $this->lineup->getKey())->delete();
 
-        LineupPlayer::where('lineup_id', $this->lineup->getKey())->delete();
+            foreach ($this->players as $player) {
+                LineupPlayer::create([
+                    'lineup_id' => $this->lineup->getKey(),
+                    'player_id' => $player->getKey(),
+                    'position' => $player->position,
+                    'is_starter' => false,
+                    'position_order' => 0,
+                ]);
+            }
 
-        foreach ($this->players as $player) {
-            LineupPlayer::create([
-                'lineup_id' => $this->lineup->getKey(),
-                'player_id' => $player->getKey(),
-                'position' => $player->position,
-                'is_starter' => false,
-                'position_order' => 0,
+            $this->dispatch('notify', [
+                'type' => 'info',
+                'message' => 'Formation changed to ' . Formation::find($this->selectedFormationId)->name
             ]);
         }
-
-        $this->dispatch('notify', [
-            'type' => 'info',
-            'message' => 'Formation changed to ' . Formation::find($this->selectedFormationId)->name
-        ]);
     }
 
     public function changeTactic(): void
@@ -261,11 +262,10 @@ class TeamManagement extends Component
         if (!$this->isPreferredPosition($player->position, $position)) {
             $this->showWarning = true;
             $this->warningMessage = "Warning: " . $player->name . " is not naturally a " . $this->formatPositionName($position) . ". This may affect their performance.";
+            $this->validateLineup();
         } else {
             $this->showWarning = false;
         }
-
-        $this->saveLineup();
 
         $this->dispatch('notify', [
             'type' => 'success',
@@ -280,7 +280,7 @@ class TeamManagement extends Component
             $this->benchPlayers[] = $this->lineupPlayers[$position];
             $this->lineupPlayers[$position] = null;
 
-            $this->saveLineup();
+            $this->validateLineup();
 
             $this->dispatch('notify', [
                 'type' => 'info',
@@ -291,6 +291,14 @@ class TeamManagement extends Component
 
     public function saveLineup(): void
     {
+        if (!$this->validateLineup()) {
+            $this->dispatch('notify', [
+                'type' => 'error',
+                'message' => 'Cannot save lineup: all positions must have a player assigned'
+            ]);
+            return;
+        }
+
         LineupPlayer::where('lineup_id', $this->lineup->getKey())->delete();
 
         foreach ($this->lineupPlayers as $formationPosition => $playerId) {
@@ -330,6 +338,27 @@ class TeamManagement extends Component
     {
         return ucwords(strtolower(str_replace('_', ' ', $position)));
     }
+
+    private function validateLineup(): bool
+    {
+        $emptyPositions = [];
+
+        foreach ($this->positions as $position => $coords) {
+            if (empty($this->lineupPlayers[$position])) {
+                $emptyPositions[] = $this->formatPositionName($position);
+            }
+        }
+
+        if (count($emptyPositions) > 0) {
+            $this->showWarning = true;
+            $this->warningMessage = "Please fill all positions before saving! Empty positions: " . implode(', ', $emptyPositions);
+            return false;
+        }
+
+        $this->showWarning = false;
+        return true;
+    }
+
 
     public function render()
     {

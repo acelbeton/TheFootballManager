@@ -1,6 +1,6 @@
 <div>
     <div class="container p-5">
-        <div class="d-flex justify-content-evenly align-content-between">
+        <div class="team-cards-container">
             @foreach($teams as $team)
                 @include('livewire.team.partials.team-card')
             @endforeach

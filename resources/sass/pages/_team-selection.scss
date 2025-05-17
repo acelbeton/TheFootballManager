@@ -1,10 +1,20 @@
 @use '../abstract/variables' as vars;
 
+.team-cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, 300px);
+    gap: vars.$spacing-lg;
+    justify-content: center;
+
+    @media (max-width: 576px) {
+        grid-template-columns: minmax(280px, 300px);
+    }
+}
+
 .team-card {
     background-color: vars.$color-section-background;
     border-radius: vars.$border-radius-md;
     border: 1px solid vars.$color-border;
-    position: relative;
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
 
@@ -12,27 +22,24 @@
         transform: translateY(-5px);
         box-shadow: 0 4px 15px rgba(vars.$color-primary, 0.1);
     }
-}
-
-.team-card-header {
-    background: linear-gradient(45deg, vars.$color-primary, vars.$color-highlight);
-    padding: vars.$spacing-lg;
-    position: relative;
 
     h3 {
+        background: linear-gradient(60deg, vars.$color-primary, vars.$color-disabled);
         color: vars.$color-background;
         font-weight: 700;
-        margin: 0;
-        text-align: center;
-        text-shadow: 0 2px 4px rgba(vars.$color-text, 0.1);
+        //text-shadow: 0 2px 4px rgba(vars.$color-text, 0.1);
+
+        @media (max-width: 576px) {
+            font-size: 1.1rem;
+        }
     }
 }
 
 .stats-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    padding: vars.$spacing-lg;
+    gap: vars.$spacing-md;
+    padding: vars.$spacing-md;
 
     .stat-item {
         background: rgba(vars.$color-border, 0.1);
@@ -47,7 +54,7 @@
             margin-top: vars.$spacing-sm;
 
             small {
-                $color: vars.$color-disabled;
+                color: vars.$color-disabled;
                 font-size: 0.75rem;
             }
         }
@@ -56,16 +63,47 @@
             font-size: 0.85rem;
             color: vars.$color-disabled;
             text-transform: uppercase;
-            letter-spacing: vars.$spacing-sm;
+            letter-spacing: 0.5px;
         }
     }
 }
 
 .team-card-footer {
-    padding: vars.$spacing-md vars.$spacing-lg;
+    padding: 0.75rem vars.$spacing-md;
     background: rgba(vars.$color-border, 0.1);
     border-top: 1px solid rgba(vars.$color-border, 0.1);
     display: flex;
     justify-content: center;
-    gap: vars.$spacing-md;
+    gap: 0.75rem;
+
+    @media (max-width: 480px) {
+        gap: vars.$spacing-sm;
+        flex-wrap: wrap;
+
+        .button {
+            flex: 1;
+            min-width: 80px;
+            font-size: 0.9rem;
+        }
+    }
+}
+
+@media (max-width: 576px) {
+    .container.p-5 {
+        padding: vars.$spacing-md !important;
+    }
+
+    .team-card.m-3 {
+        margin: vars.$spacing-sm !important;
+    }
+}
+
+@media (max-width: 576px) {
+    .mt-5.d-flex.justify-content-center {
+        margin-top: vars.$spacing-lg !important;
+
+        .button {
+            width: 100%;
+        }
+    }
 }

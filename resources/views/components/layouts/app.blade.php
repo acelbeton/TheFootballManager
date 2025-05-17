@@ -10,33 +10,44 @@
         <nav class="custom-nav">
             <div class="nav-container">
                 <a href="/" wire:navigate class="nav-brand">Football Manager</a>
-                <ul class="nav-list">
-                    <li class="nav-item">
-                        <a class="nav-link" href="/" wire:navigate>Home</a>
-                    </li>
+
+                <button class="menu-toggle" aria-label="Toggle menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+
+                <div class="nav-items">
+                    <a class="nav-link" href="/" wire:navigate>Home</a>
+
                     @auth
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('dashboard') }}" wire:navigate>Dashboard</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('change-team') }}" wire:navigate>Change Team</a>
-                        </li>
-                        <li class="nav-item">
+                        <a class="nav-link" href="{{ route('dashboard') }}" wire:navigate>Dashboard</a>
+                        <a class="nav-link" href="{{ route('change-team') }}" wire:navigate>Change Team</a>
+                        <div class="logout-container">
                             @livewire('auth.logout')
-                        </li>
+                        </div>
                     @else
-                        <li class="nav-item">
-                            <a class="nav-link" href="/login" wire:navigate>Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/register" wire:navigate>Register</a>
-                        </li>
+                        <a class="nav-link" href="/login" wire:navigate>Login</a>
+                        <a class="nav-link" href="/register" wire:navigate>Register</a>
                     @endauth
-                </ul>
+                </div>
             </div>
         </nav>
         <div class="main-content">
             {{ $slot }}
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const menuToggle = document.querySelector('.menu-toggle');
+                const navItems = document.querySelector('.nav-items');
+
+                menuToggle.addEventListener('click', function() {
+                    navItems.classList.toggle('show');
+                });
+            });
+        </script>
     </body>
 </html>

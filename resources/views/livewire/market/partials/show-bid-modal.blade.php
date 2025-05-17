@@ -49,8 +49,8 @@
             </div>
 
             <div class="custom-modal__footer">
-                <button type="button" class="btn btn-secondary" wire:click="cancelBid">Cancel</button>
-                <button type="button" class="btn btn-primary" wire:click="placeBid">Place Bid</button>
+                <button type="button" class="button button-secondary" wire:click="cancelBid">Cancel</button>
+                <button type="button" class="button button-primary" wire:click="placeBid">Place Bid</button>
             </div>
         </div>
     </div>

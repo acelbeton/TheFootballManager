@@ -37,7 +37,7 @@
             Select
         </button>
 
-{{--        @if(!$team->season)--}}
+        @if(!$team->season)
             <button
                 class="button button-warning"
                 wire:click="$dispatch('openDeleteConfirmation', {
@@ -47,6 +47,6 @@
             >
                 Delete
             </button>
-{{--        @endif--}}
+        @endif
     </div>
 </div>

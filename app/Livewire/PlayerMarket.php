@@ -121,7 +121,7 @@ class PlayerMarket extends Component
             return;
         }
 
-        $highestBid = Market::where('player_id', $this->selectedPlayer->id)
+        $highestBid = Market::where('player_id', $this->selectedPlayer->getKey())
             ->orderBy('current_bid_amount', 'desc')
             ->first();
 
@@ -129,7 +129,7 @@ class PlayerMarket extends Component
             $highestBid->current_bid_amount + 100 :
             $this->selectedPlayer->market_value;
 
-        if ($this->bidAmount > $minimumBid) {
+        if ($this->bidAmount < $minimumBid) {
             $this->addError('bidAmount', 'Your bid must be at least ' . $minimumBid);
             return;
         }
@@ -141,7 +141,7 @@ class PlayerMarket extends Component
             ],
             [
                 'current_bid_amount' => $this->bidAmount,
-                'bidding_end_date' => Carbon::now()->addDays(1), // TODO maybe change
+                'bidding_end_date' => Carbon::now()->addDays(1),
             ]
         );
 

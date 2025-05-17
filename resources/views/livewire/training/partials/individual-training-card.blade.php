@@ -14,7 +14,7 @@
                 <button wire:click="trainIndividuals"
                         wire:target="trainIndividuals"
                         wire:loading.attr="disabled"
-                        class="btn btn-success"
+                        class="button button-highlight"
                         x-data="{ count: @js(count($selectedPlayers)) }"
                         x-init="
                             document.addEventListener('selected-players-updated', (e) => {
