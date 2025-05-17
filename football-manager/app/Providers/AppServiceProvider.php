@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\Statistic;
 use App\Observers\StatisticObserver;
+use DB;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,6 +23,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        DB::disableQueryLog();
+        Model::preventLazyLoading(!app()->isProduction());
+
         Statistic::observe(StatisticObserver::class);
     }
 }
