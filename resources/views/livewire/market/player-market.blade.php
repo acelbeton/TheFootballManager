@@ -2,7 +2,7 @@
     use App\Http\Enums\PlayerPosition;
 @endphp
 
-<div class="market-container">
+<div class="market-container" wire:poll.5s>
     <div class="dashboard-header section-card">
         <div class="header-content">
             <h1>Player Market</h1>
@@ -50,71 +50,71 @@
         <div class="table-responsive">
             <table class="table table-hover">
                 <thead>
-                    <tr>
-                        <th wire:click="sortBy('name')" class="sortable">
-                            Player Name
-                            @if ($sortField === 'name')
-                                <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                            @endif
-                        </th>
-                        <th wire:click="sortBy('position')" class="sortable">
-                            Position
-                            @if ($sortField === 'position')
-                                <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                            @endif
-                        </th>
-                        <th wire:click="sortBy('rating')" class="sortable">
-                            Rating
-                            @if ($sortField === 'rating')
-                                <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                            @endif
-                        </th>
-                        <th wire:click="sortBy('market_value')" class="sortable">
-                            Market value
-                            @if ($sortField === 'market_value')
-                                <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
-                            @endif
-                        </th>
-                        <th>Current Bid</th>
-                        <th>Time Left</th>
-                        <th>Actions</th>
-                    </tr>
+                <tr>
+                    <th wire:click="sortBy('name')" class="sortable">
+                        Player Name
+                        @if ($sortField === 'name')
+                            <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                        @endif
+                    </th>
+                    <th wire:click="sortBy('position')" class="sortable">
+                        Position
+                        @if ($sortField === 'position')
+                            <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                        @endif
+                    </th>
+                    <th wire:click="sortBy('rating')" class="sortable">
+                        Rating
+                        @if ($sortField === 'rating')
+                            <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                        @endif
+                    </th>
+                    <th wire:click="sortBy('market_value')" class="sortable">
+                        Market value
+                        @if ($sortField === 'market_value')
+                            <i class="bi bi-arrow-{{ $sortDirection === 'asc' ? 'up' : 'down' }}"></i>
+                        @endif
+                    </th>
+                    <th>Current Bid</th>
+                    <th>Time Left</th>
+                    <th>Actions</th>
+                </tr>
                 </thead>
                 <tbody>
-                    @forelse($players as $player)
-                        <tr>
-                            <td>{{ $player->name }}</td>
-                            <td>
-                                <span class="position-badge {{ strtolower(str_replace('_', '-', $player->position)) }}">
-                                    {{ PlayerPosition::getName($player->position) }}
-                                </span>
-                            </td>
-                            <td>
-                                <div class="rating-stars">
-                                    @for ($i = 1; $i <= 5; $i++)
-                                        @if ($i <= floor($player->rating / 20))
-                                            <i class="bi bi-star-fill"></i>
-                                        @elseif ($i - 0.5 <= $player->rating / 20)
-                                            <i class="bi bi-star-half"></i>
-                                        @else
-                                            <i class="bi bi-star"></i>
-                                        @endif
-                                    @endfor
-                                    <span class="rating-number">{{ $player->rating }}</span>
-                                </div>
-                            </td>
-                            <td>{{ number_format($player->market_value) }} €</td>
-                            <td>
-                                @if (isset($marketInputs[$player->getKey()]) && $marketInputs[$player->getKey()]->count() > 0)
-                                    {{ number_format($marketInputs[$player->getKey()]->first()->current_bid_amount) }} €
-                                    <span class="bid-count">{{ $marketInputs[$player->getKey()]->count() }} bids</span>
-                                @else
-                                    <span class="no-bids">No bids yet</span>
-                                @endif
-                            </td>
-                            <td>
-                                @if (isset($marketInputs[$player->getKey()]) && $marketInputs[$player->getKey()]->count() > 0)
-                                    <div x-data="{
+                @forelse($players as $player)
+                    <tr>
+                        <td>{{ $player->name }}</td>
+                        <td>
+                            <span class="position-badge {{ strtolower(str_replace('_', '-', $player->position)) }}">
+                                {{ PlayerPosition::getName($player->position) }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="rating-stars">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    @if ($i <= floor($player->rating / 20))
+                                        <i class="bi bi-star-fill"></i>
+                                    @elseif ($i - 0.5 <= $player->rating / 20)
+                                        <i class="bi bi-star-half"></i>
+                                    @else
+                                        <i class="bi bi-star"></i>
+                                    @endif
+                                @endfor
+                                <span class="rating-number">{{ $player->rating }}</span>
+                            </div>
+                        </td>
+                        <td>{{ number_format($player->market_value) }} €</td>
+                        <td>
+                            @if (isset($marketInputs[$player->getKey()]) && $marketInputs[$player->getKey()]->count() > 0)
+                                {{ number_format($marketInputs[$player->getKey()]->first()->current_bid_amount) }} €
+                                <span class="bid-count">{{ $marketInputs[$player->getKey()]->count() }} bids</span>
+                            @else
+                                <span class="no-bids">No bids yet</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if (isset($marketInputs[$player->getKey()]) && $marketInputs[$player->getKey()]->count() > 0)
+                                <div x-data="{
                                         endTime: '{{ $marketInputs[$player->id]->first()->bidding_end_date }}',
                                         remaining: '',
                                         init() {
@@ -138,22 +138,21 @@
                                             this.remaining = `${hours}h ${minutes}m ${seconds}s`;
                                         }
                                     }" x-text="remaining" class="time-left"></div>
-                                @else
-                                    <span>-</span>
-                                @endif
-                            </td>
-                            <td>
-                                {{-- TODO button size --}}
-                                <button class="button button-primary button-small" wire:click="selectPlayer({{ $player->getKey() }})">
-                                    Place Bid
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="text-center">No players available on the market</td>
-                        </tr>
-                    @endforelse
+                            @else
+                                <span>-</span>
+                            @endif
+                        </td>
+                        <td>
+                            <button class="button button-primary button-small" wire:click="selectPlayer({{ $player->getKey() }})">
+                                Place Bid
+                            </button>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="text-center">No players available on the market</td>
+                    </tr>
+                @endforelse
                 </tbody>
             </table>
         </div>

@@ -34,21 +34,4 @@ class Standing extends Model
     {
         return $this->belongsTo(Team::class);
     }
-
-    public function updateTeamPointsPerWeekAvg($teamId)
-    {
-        $sumPoints = TeamPerformance::where('team_id', $teamId)->sum('points');
-        $weeksPlayed = TeamPerformance::where('team_id', $teamId)
-            ->distinct('week_number')
-            ->count('week_number');
-
-        $avg = $weeksPlayed > 0 ? $sumPoints / $weeksPlayed : 0;
-
-        $standing = Standing::where('team_id', $teamId)->first();
-        if ($standing) {
-            $standing->points_per_week_avg = $avg;
-            $standing->save();
-        }
-    }
-
 }

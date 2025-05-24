@@ -158,6 +158,8 @@ class PlayerMarket extends Component
 
     public function handleBidUpdate()
     {
+        $this->dispatch('bidPlaced');
+
         $this->dispatch('notify', [
             'type' => 'success',
             'message' => 'New bid placed on a player. Market has been updated'

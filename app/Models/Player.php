@@ -40,12 +40,6 @@ class Player extends Model
                 throw new Exception('Condition must be between 1 and 100.');
             }
         });
-
-        self::saved(function (Player $player) {
-            if ($player->isDirty('rating') && $player->team_id) {
-                $player->team->updateRating();
-            }
-        });
     }
 
     public function calculateRating(): int

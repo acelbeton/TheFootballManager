@@ -10,6 +10,7 @@ use App\Models\Standing;
 use App\Models\Team;
 use Exception;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 class AITeamGeneratorService
 {
@@ -27,6 +28,9 @@ class AITeamGeneratorService
         $this->lineupService = $lineupService;
     }
 
+    /**
+     * @throws Throwable
+     */
     public function generateTeamsForSeason(Season $season, int $targetTeamCount = self::MIN_TEAMS_PER_LEAGUE): array
     {
         $currentTeamCount = Team::where('season_id', $season->getKey())->count();

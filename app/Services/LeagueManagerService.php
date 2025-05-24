@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Http\Enums\PrizeMoney;
 use App\Models\League;
 use App\Models\MatchModel;
 use App\Models\Season;
@@ -43,19 +44,6 @@ class LeagueManagerService
         $season = Season::where('league_id', $league->getKey())
             ->where('open', true)
             ->first();
-
-        if (!$season) {
-            $season = Season::create([
-                'league_id' => $league->getKey(),
-                'start_date' => now(),
-                'end_date' => now()->addWeeks(self::SEASON_WEEKS),
-                'open' => true,
-                'prize_money_first' => 10000,
-                'prize_money_second' => 5000,
-                'prize_money_third' => 2500,
-                'prize_money_other' => 1000,
-            ]);
-        }
 
         $this->aiTeamGenerator->generateTeamsForSeason($season, $minTeams);
 
@@ -192,10 +180,10 @@ class LeagueManagerService
                 'start_date' => now(),
                 'end_date' => now()->addWeeks(self::SEASON_WEEKS),
                 'open' => true,
-                'prize_money_first' => 10000,
-                'prize_money_second' => 5000,
-                'prize_money_third' => 2500,
-                'prize_money_other' => 1000,
+                'prize_money_first' => PrizeMoney::PRIZE_MONEY_FIRST,
+                'prize_money_second' => PrizeMoney::PRIZE_MONEY_SECOND,
+                'prize_money_third' => PrizeMoney::PRIZE_MONEY_THIRD,
+                'prize_money_other' => PrizeMoney::PRIZE_MONEY_OTHER,
             ]);
 
             $teams = Team::where('season_id', $currentSeason ? $currentSeason->getKey() : null)

@@ -62,15 +62,4 @@ class Team extends Model
     {
         return $this->hasMany(TeamLineup::class);
     }
-
-    // Ez lehet, hogy nem kell, mivel most fillable a team_rating
-//    public function getTeamRatingAttribute(): int
-//    {
-//        $players = $this->players;
-//        if ($players->isEmpty()) {
-//            return 0;
-//        }
-//
-//        return (int) $players->avg($players->rating);
-//    }
 }
